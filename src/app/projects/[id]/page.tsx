@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation"
-import { getProjectById, mockProjects, mockUsers } from "@/lib/mock-data"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { prisma } from "@/lib/prisma"
 import { DashboardHeader } from "@/components/layout/DashboardHeader"
 import { ProjectDetail } from "@/components/project/ProjectDetail"
 
@@ -7,27 +9,40 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-// Required for static export
-export function generateStaticParams() {
-  return mockProjects.map((project) => ({
-    id: project.id,
-  }))
+async function getProject(id: string) {
+  const project = await prisma.project.findUnique({
+    where: { id },
+    include: {
+      owner: { select: { id: true, name: true, avatar: true } },
+      members: {
+        include: {
+          user: { select: { id: true, name: true, avatar: true } }
+        }
+      },
+      links: true,
+      _count: { select: { tasks: true } }
+    }
+  })
+  return project
 }
 
 export default async function ProjectPage({ params }: Props) {
   const { id } = await params
-  const project = getProjectById(id)
+  const project = await getProject(id)
   
   if (!project) {
     notFound()
   }
 
-  // Mock session - Oak is logged in
-  const sessionUser = mockUsers[0]
+  const session = await getServerSession(authOptions)
+  
+  if (!session) {
+    redirect("/login")
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader user={sessionUser} />
+      <DashboardHeader user={session.user} />
       <main className="container mx-auto px-4 py-8">
         <ProjectDetail project={project} />
       </main>
