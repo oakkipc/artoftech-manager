@@ -12,12 +12,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { signOut } from "next-auth/react"
+import { Users, LayoutDashboard, Shield } from "lucide-react"
 
 interface DashboardHeaderProps {
   user: User
 }
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
+  const isAdmin = user.role === "ADMIN"
+
   return (
     <header className="glass sticky top-0 z-50 border-b border-white/5">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -34,10 +37,21 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
           <nav className="hidden md:flex items-center gap-1">
             <a 
               href="/dashboard" 
-              className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-all"
+              className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-all flex items-center gap-2"
             >
+              <LayoutDashboard className="w-4 h-4" />
               แดชบอร์ด
             </a>
+            
+            {isAdmin && (
+              <a 
+                href="/admin/users" 
+                className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-all flex items-center gap-2"
+              >
+                <Shield className="w-4 h-4" />
+                จัดการผู้ใช้
+              </a>
+            )}
           </nav>
         </div>
 
@@ -54,18 +68,37 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                     {user.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden sm:inline text-sm text-slate-300">{user.name}</span>
+                <div className="hidden sm:block text-left">
+                  <div className="text-sm text-slate-300">{user.name}</div>
+                  <div className="text-xs text-slate-500">{isAdmin ? "แอดมิน" : "สมาชิก"}</div>
+                </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent 
               align="end"
               className="w-56 bg-[#13131a] border-[#27273a]"
             >
-              <DropdownMenuLabel className="text-slate-400">{user.email}</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-slate-400">
+                <div>{user.email}</div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-white/10" />
+              
+              {isAdmin && (
+                <>
+                  <DropdownMenuItem 
+                    onClick={() => window.location.href = "/admin/users"}
+                    className="text-slate-300 focus:text-slate-100 focus:bg-white/5 cursor-pointer"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    จัดการผู้ใช้
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                </>
+              )}
+              
               <DropdownMenuItem 
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-red-400 focus:text-red-300 focus:bg-red-500/10"
+                className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
               >
                 ออกจากระบบ
               </DropdownMenuItem>
