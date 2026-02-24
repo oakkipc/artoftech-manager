@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth/next"
+import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { DashboardHeader } from "@/components/layout/DashboardHeader"
@@ -46,26 +46,25 @@ export default async function BoardPage({ params }: Props) {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#0a0a0f]">
         <DashboardHeader user={session.user} />
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold mb-2">ไม่พบโปรเจกต์</h1>
-            <p className="text-gray-500">โปรเจกต์ที่คุณค้นหาไม่มีอยู่ในระบบ</p>
+            <h1 className="text-2xl font-bold mb-2 text-slate-100">ไม่พบโปรเจกต์</h1>
+            <p className="text-slate-500">โปรเจกต์ที่คุณค้นหาไม่มีอยู่ในระบบ</p>
           </div>
         </main>
       </div>
     )
   }
 
-  // Transform tasks to match mock data format
   const formattedTasks = tasks.map(task => ({
     ...task,
     tags: task.tags.map(t => t.tag)
   }))
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0a0a0f]">
       <DashboardHeader user={session.user} />
       <main className="container mx-auto px-4 py-6">
         <KanbanBoard project={project} initialTasks={formattedTasks} />

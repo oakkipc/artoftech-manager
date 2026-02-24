@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
+import { getServerSession } from "next-auth"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
 const canManageUsers = (role: string) => ["SUPER_ADMIN", "ADMIN"].includes(role)
 
-// GET /api/users/[id] - Get user by ID
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -47,7 +46,6 @@ export async function GET(
   }
 }
 
-// PATCH /api/users/[id] - Update user
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -63,7 +61,6 @@ export async function PATCH(
     const body = await request.json()
     const { name, email, role, password } = body
 
-    // Get target user
     const targetUser = await prisma.user.findUnique({
       where: { id },
       select: { role: true }
@@ -73,7 +70,6 @@ export async function PATCH(
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // ADMIN cannot modify SUPER_ADMIN
     if (session.user.role === "ADMIN" && targetUser.role === "SUPER_ADMIN") {
       return NextResponse.json(
         { error: "ไม่มีสิทธิ์แก้ไขซูเปอร์แอดมิน" },
@@ -81,7 +77,6 @@ export async function PATCH(
       )
     }
 
-    // ADMIN cannot promote to SUPER_ADMIN
     if (session.user.role === "ADMIN" && role === "SUPER_ADMIN") {
       return NextResponse.json(
         { error: "ไม่มีสิทธิ์ตั้งเป็นซูเปอร์แอดมิน" },
@@ -115,7 +110,6 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/users/[id] - Delete user
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -127,7 +121,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
-  // Prevent deleting yourself
   if (session.user.id === id) {
     return NextResponse.json(
       { error: "ไม่สามารถลบบัญชีตัวเองได้" },
@@ -136,7 +129,6 @@ export async function DELETE(
   }
 
   try {
-    // Get target user
     const targetUser = await prisma.user.findUnique({
       where: { id },
       select: { role: true }
@@ -146,7 +138,6 @@ export async function DELETE(
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // ADMIN cannot delete SUPER_ADMIN
     if (session.user.role === "ADMIN" && targetUser.role === "SUPER_ADMIN") {
       return NextResponse.json(
         { error: "ไม่มีสิทธิ์ลบซูเปอร์แอดมิน" },

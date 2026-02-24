@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
+import { getServerSession } from "next-auth"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
-// Helper to check if user can manage users
 const canManageUsers = (role: string) => ["SUPER_ADMIN", "ADMIN"].includes(role)
 
-// GET /api/users - List all users (SUPER_ADMIN and ADMIN only)
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)
   
@@ -40,7 +38,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/users - Create new user (SUPER_ADMIN and ADMIN only)
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   
@@ -52,7 +49,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, email, password, role } = body
 
-    // ADMIN cannot create SUPER_ADMIN
     if (session.user.role === "ADMIN" && role === "SUPER_ADMIN") {
       return NextResponse.json(
         { error: "ไม่มีสิทธิ์สร้างซูเปอร์แอดมิน" },
@@ -60,7 +56,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
@@ -72,10 +67,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         name,

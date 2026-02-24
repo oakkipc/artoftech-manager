@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth/next"
+import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { DashboardHeader } from "@/components/layout/DashboardHeader"
@@ -33,7 +33,6 @@ export default async function AdminUsersPage() {
     redirect("/login")
   }
 
-  // Only SUPER_ADMIN and ADMIN can access this page
   if (!["SUPER_ADMIN", "ADMIN"].includes(session.user.role)) {
     redirect("/dashboard")
   }

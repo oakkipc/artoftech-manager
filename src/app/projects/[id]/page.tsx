@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation"
-import { getServerSession } from "next-auth/next"
+import { notFound, redirect } from "next/navigation"
+import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { DashboardHeader } from "@/components/layout/DashboardHeader"
@@ -41,7 +41,7 @@ export default async function ProjectPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0a0a0f]">
       <DashboardHeader user={session.user} />
       <main className="container mx-auto px-4 py-8">
         <ProjectDetail project={project} />
