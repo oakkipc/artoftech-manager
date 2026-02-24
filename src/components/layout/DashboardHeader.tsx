@@ -12,14 +12,30 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { signOut } from "next-auth/react"
-import { Users, LayoutDashboard, Shield } from "lucide-react"
+import { Users, LayoutDashboard, Shield, Crown } from "lucide-react"
 
 interface DashboardHeaderProps {
   user: User
 }
 
+// Permission helpers
+const canManageUsers = (role: string) => ["SUPER_ADMIN", "ADMIN"].includes(role)
+const canAccessAdmin = (role: string) => ["SUPER_ADMIN", "ADMIN", "OFFICER"].includes(role)
+
 export function DashboardHeader({ user }: DashboardHeaderProps) {
-  const isAdmin = user.role === "ADMIN"
+  const roleLabel: Record<string, string> = {
+    SUPER_ADMIN: "ซูเปอร์แอดมิน",
+    ADMIN: "แอดมิน",
+    OFFICER: "เจ้าหน้าที่",
+    MEMBER: "สมาชิก"
+  }
+
+  const roleIcon: Record<string, React.ReactNode> = {
+    SUPER_ADMIN: <Crown className="w-4 h-4 text-yellow-400" />,
+    ADMIN: <Shield className="w-4 h-4 text-indigo-400" />,
+    OFFICER: <Shield className="w-4 h-4 text-purple-400" />,
+    MEMBER: null
+  }
 
   return (
     <header className="glass sticky top-0 z-50 border-b border-white/5">
@@ -43,12 +59,12 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
               แดชบอร์ด
             </a>
             
-            {isAdmin && (
+            {canManageUsers(user.role) && (
               <a 
                 href="/admin/users" 
                 className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-all flex items-center gap-2"
               >
-                <Shield className="w-4 h-4" />
+                <Users className="w-4 h-4" />
                 จัดการผู้ใช้
               </a>
             )}
@@ -70,7 +86,10 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                 </Avatar>
                 <div className="hidden sm:block text-left">
                   <div className="text-sm text-slate-300">{user.name}</div>
-                  <div className="text-xs text-slate-500">{isAdmin ? "แอดมิน" : "สมาชิก"}</div>
+                  <div className="text-xs text-slate-500 flex items-center gap-1">
+                    {roleIcon[user.role]}
+                    {roleLabel[user.role]}
+                  </div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
@@ -80,10 +99,20 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             >
               <DropdownMenuLabel className="text-slate-400">
                 <div>{user.email}</div>
+                <div className="text-xs flex items-center gap-1 mt-1">
+                  {roleIcon[user.role]}
+                  <span className={
+                    user.role === "SUPER_ADMIN" ? "text-yellow-400" :
+                    user.role === "ADMIN" ? "text-indigo-400" :
+                    user.role === "OFFICER" ? "text-purple-400" : "text-slate-500"
+                  }>
+                    {roleLabel[user.role]}
+                  </span>
+                </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-white/10" />
               
-              {isAdmin && (
+              {canManageUsers(user.role) && (
                 <>
                   <DropdownMenuItem 
                     onClick={() => window.location.href = "/admin/users"}

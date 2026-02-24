@@ -33,8 +33,8 @@ export default async function AdminUsersPage() {
     redirect("/login")
   }
 
-  // Only ADMIN can access this page
-  if (session.user.role !== "ADMIN") {
+  // Only SUPER_ADMIN and ADMIN can access this page
+  if (!["SUPER_ADMIN", "ADMIN"].includes(session.user.role)) {
     redirect("/dashboard")
   }
 
@@ -50,7 +50,7 @@ export default async function AdminUsersPage() {
           <p className="text-slate-400">เพิ่ม แก้ไข หรือลบผู้ใช้ในระบบ</p>
         </div>
 
-        <UsersTable initialUsers={users} />
+        <UsersTable initialUsers={users} currentUserRole={session.user.role} />
       </main>
     </div>
   )

@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
+const canManageUsers = (role: string) => ["SUPER_ADMIN", "ADMIN"].includes(role)
+
 // GET /api/users/[id] - Get user by ID
 export async function GET(
   request: NextRequest,
@@ -12,7 +14,7 @@ export async function GET(
   const session = await getServerSession(authOptions)
   const { id } = await params
   
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !canManageUsers(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -53,13 +55,39 @@ export async function PATCH(
   const session = await getServerSession(authOptions)
   const { id } = await params
   
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !canManageUsers(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
   try {
     const body = await request.json()
     const { name, email, role, password } = body
+
+    // Get target user
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { role: true }
+    })
+
+    if (!targetUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // ADMIN cannot modify SUPER_ADMIN
+    if (session.user.role === "ADMIN" && targetUser.role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "ไม่มีสิทธิ์แก้ไขซูเปอร์แอดมิน" },
+        { status: 403 }
+      )
+    }
+
+    // ADMIN cannot promote to SUPER_ADMIN
+    if (session.user.role === "ADMIN" && role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "ไม่มีสิทธิ์ตั้งเป็นซูเปอร์แอดมิน" },
+        { status: 403 }
+      )
+    }
 
     const updateData: any = {}
     if (name) updateData.name = name
@@ -95,7 +123,7 @@ export async function DELETE(
   const session = await getServerSession(authOptions)
   const { id } = await params
   
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !canManageUsers(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -108,6 +136,24 @@ export async function DELETE(
   }
 
   try {
+    // Get target user
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { role: true }
+    })
+
+    if (!targetUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // ADMIN cannot delete SUPER_ADMIN
+    if (session.user.role === "ADMIN" && targetUser.role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "ไม่มีสิทธิ์ลบซูเปอร์แอดมิน" },
+        { status: 403 }
+      )
+    }
+
     await prisma.user.delete({
       where: { id }
     })

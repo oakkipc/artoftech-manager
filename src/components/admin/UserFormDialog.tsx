@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Crown, Shield, User, Users } from "lucide-react"
 
 interface User {
   id: string
@@ -32,9 +33,17 @@ interface UserFormDialogProps {
   user?: User
   onSubmit: (data: { name: string; email: string; role: string; password?: string }) => void
   trigger: React.ReactNode
+  currentUserRole?: string
 }
 
-export function UserFormDialog({ user, onSubmit, trigger }: UserFormDialogProps) {
+const roleOptions = [
+  { value: "SUPER_ADMIN", label: "ซูเปอร์แอดมิน", icon: Crown, color: "text-yellow-400" },
+  { value: "ADMIN", label: "แอดมิน", icon: Shield, color: "text-indigo-400" },
+  { value: "OFFICER", label: "เจ้าหน้าที่", icon: Users, color: "text-purple-400" },
+  { value: "MEMBER", label: "สมาชิก", icon: User, color: "text-slate-400" },
+]
+
+export function UserFormDialog({ user, onSubmit, trigger, currentUserRole }: UserFormDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -43,6 +52,13 @@ export function UserFormDialog({ user, onSubmit, trigger }: UserFormDialogProps)
     role: user?.role || "MEMBER",
     password: ""
   })
+
+  // Filter available roles based on current user's role
+  const availableRoles = (() => {
+    if (currentUserRole === "SUPER_ADMIN") return roleOptions
+    if (currentUserRole === "ADMIN") return roleOptions.filter(r => r.value !== "SUPER_ADMIN")
+    return roleOptions.filter(r => r.value === "MEMBER")
+  })()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,7 +78,6 @@ export function UserFormDialog({ user, onSubmit, trigger }: UserFormDialogProps)
     setIsLoading(false)
     setOpen(false)
     
-    // Reset form if creating new user
     if (!user) {
       setFormData({ name: "", email: "", role: "MEMBER", password: "" })
     }
@@ -113,8 +128,21 @@ export function UserFormDialog({ user, onSubmit, trigger }: UserFormDialogProps)
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#1e1e2e] border-[#27273a]">
-                <SelectItem value="ADMIN" className="text-slate-100">แอดมิน</SelectItem>
-                <SelectItem value="MEMBER" className="text-slate-100">สมาชิก</SelectItem>
+                {availableRoles.map((role) => {
+                  const Icon = role.icon
+                  return (
+                    <SelectItem 
+                      key={role.value} 
+                      value={role.value} 
+                      className="text-slate-100"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Icon className={`w-4 h-4 ${role.color}`} />
+                        {role.label}
+                      </span>
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
           </div>

@@ -4,11 +4,14 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
-// GET /api/users - List all users (Admin only)
+// Helper to check if user can manage users
+const canManageUsers = (role: string) => ["SUPER_ADMIN", "ADMIN"].includes(role)
+
+// GET /api/users - List all users (SUPER_ADMIN and ADMIN only)
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)
   
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !canManageUsers(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -37,17 +40,25 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/users - Create new user (Admin only)
+// POST /api/users - Create new user (SUPER_ADMIN and ADMIN only)
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !canManageUsers(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
   try {
     const body = await request.json()
     const { name, email, password, role } = body
+
+    // ADMIN cannot create SUPER_ADMIN
+    if (session.user.role === "ADMIN" && role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "ไม่มีสิทธิ์สร้างซูเปอร์แอดมิน" },
+        { status: 403 }
+      )
+    }
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
