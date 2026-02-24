@@ -62,7 +62,7 @@ export default async function BoardPage({ params }: Props) {
 
   const formattedTasks = tasks.map((task: TaskWithTags) => ({
     ...task,
-    tags: task.tags.map(t => t.tag)
+    tags: task.tags.map((t: { tag: { id: string; name: string; color: string } }) => t.tag)
   }))
 
   return (
