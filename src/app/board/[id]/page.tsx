@@ -34,6 +34,8 @@ async function getProjectAndTasks(id: string) {
   return { project, tasks }
 }
 
+type TaskWithTags = Awaited<ReturnType<typeof getProjectAndTasks>>["tasks"][number]
+
 export default async function BoardPage({ params }: Props) {
   const { id } = await params
   const session = await getServerSession(authOptions)
@@ -58,7 +60,7 @@ export default async function BoardPage({ params }: Props) {
     )
   }
 
-  const formattedTasks = tasks.map(task => ({
+  const formattedTasks = tasks.map((task: TaskWithTags) => ({
     ...task,
     tags: task.tags.map(t => t.tag)
   }))
