@@ -2,14 +2,35 @@
 
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { MockTask } from "@/lib/mock-data"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Calendar, GripVertical } from "lucide-react"
+import { Calendar } from "lucide-react"
+
+interface Task {
+  id: string
+  projectId: string
+  title: string
+  description: string | null
+  assigneeId: string | null
+  status: "BACKLOG" | "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE"
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"
+  dueDate: Date | null
+  order: number
+  assignee: {
+    id: string
+    name: string
+    avatar: string | null
+  } | null
+  tags: {
+    id: string
+    name: string
+    color: string
+  }[]
+}
 
 interface TaskCardProps {
-  task: MockTask
+  task: Task
   isDragging?: boolean
 }
 
@@ -50,7 +71,6 @@ export function TaskCard({ task, isDragging }: TaskCardProps) {
       {...listeners}
     >
       <CardContent className="p-3">
-        {/* Priority & Tags */}
         <div className="flex items-center gap-1 flex-wrap mb-2">
           <Badge variant="secondary" className={`text-xs ${priority.color}`}>
             {priority.label} {task.priority}
@@ -68,10 +88,8 @@ export function TaskCard({ task, isDragging }: TaskCardProps) {
           ))}
         </div>
 
-        {/* Title */}
-        <h4 className="font-medium text-sm mb-2 line-clamp-2">{task.title}</h4>
+        <h4 className="font-medium text-sm mb-2 line-clamp-2 text-slate-100">{task.title}</h4>
 
-        {/* Footer */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {task.assignee ? (
@@ -86,7 +104,7 @@ export function TaskCard({ task, isDragging }: TaskCardProps) {
           </div>
 
           {task.dueDate && (
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="flex items-center gap-1 text-xs text-slate-500">
               <Calendar className="w-3 h-3" />
               <span>{new Date(task.dueDate).toLocaleDateString("th-TH", { month: "short", day: "numeric" })}</span>
             </div>

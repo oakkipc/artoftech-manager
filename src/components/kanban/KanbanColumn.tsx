@@ -2,17 +2,38 @@
 
 import { useDroppable } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { MockTask } from "@/lib/mock-data"
 import { TaskCard } from "./TaskCard"
 import { Plus } from "lucide-react"
 
+interface Task {
+  id: string
+  projectId: string
+  title: string
+  description: string | null
+  assigneeId: string | null
+  status: "BACKLOG" | "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE"
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"
+  dueDate: Date | null
+  order: number
+  assignee: {
+    id: string
+    name: string
+    avatar: string | null
+  } | null
+  tags: {
+    id: string
+    name: string
+    color: string
+  }[]
+}
+
 interface KanbanColumnProps {
   column: {
-    id: MockTask["status"]
+    id: Task["status"]
     title: string
     color: string
   }
-  tasks: MockTask[]
+  tasks: Task[]
 }
 
 export function KanbanColumn({ column, tasks }: KanbanColumnProps) {
@@ -28,7 +49,6 @@ export function KanbanColumn({ column, tasks }: KanbanColumnProps) {
         ${isOver ? "ring-2 ring-blue-400 ring-offset-2" : ""}
       `}
     >
-      {/* Column Header */}
       <div className="p-3 border-b border-gray-200/50">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">{column.title}</h3>
@@ -38,7 +58,6 @@ export function KanbanColumn({ column, tasks }: KanbanColumnProps) {
         </div>
       </div>
 
-      {/* Tasks */}
       <SortableContext
         items={tasks.map((t) => t.id)}
         strategy={verticalListSortingStrategy}
@@ -50,7 +69,6 @@ export function KanbanColumn({ column, tasks }: KanbanColumnProps) {
         </div>
       </SortableContext>
 
-      {/* Add Task Button */}
       <button className="w-full p-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-b-lg flex items-center justify-center gap-1 transition-colors">
         <Plus className="w-4 h-4" />
         เพิ่มงาน

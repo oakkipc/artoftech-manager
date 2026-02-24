@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { MockProject, MockTask, mockUsers, mockTags } from "@/lib/mock-data"
 import {
   DndContext,
   DragEndEvent,
@@ -19,12 +18,45 @@ import { TaskCard } from "./TaskCard"
 import { Button } from "@/components/ui/button"
 import { Plus, Filter } from "lucide-react"
 
-interface KanbanBoardProps {
-  project: MockProject
-  initialTasks: MockTask[]
+interface Project {
+  id: string
+  name: string
+  description: string | null
+  status: string
+  owner: {
+    id: string
+    name: string
+  }
 }
 
-const COLUMNS: { id: MockTask["status"]; title: string; color: string }[] = [
+interface Task {
+  id: string
+  projectId: string
+  title: string
+  description: string | null
+  assigneeId: string | null
+  status: "BACKLOG" | "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE"
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"
+  dueDate: Date | null
+  order: number
+  assignee: {
+    id: string
+    name: string
+    avatar: string | null
+  } | null
+  tags: {
+    id: string
+    name: string
+    color: string
+  }[]
+}
+
+interface KanbanBoardProps {
+  project: Project
+  initialTasks: Task[]
+}
+
+const COLUMNS: { id: Task["status"]; title: string; color: string }[] = [
   { id: "BACKLOG", title: "📋 Backlog", color: "bg-gray-100" },
   { id: "TODO", title: "📝 To Do", color: "bg-blue-50" },
   { id: "IN_PROGRESS", title: "🔄 In Progress", color: "bg-yellow-50" },
@@ -33,8 +65,8 @@ const COLUMNS: { id: MockTask["status"]; title: string; color: string }[] = [
 ]
 
 export function KanbanBoard({ project, initialTasks }: KanbanBoardProps) {
-  const [tasks, setTasks] = useState<MockTask[]>(initialTasks)
-  const [activeTask, setActiveTask] = useState<MockTask | null>(null)
+  const [tasks, setTasks] = useState<Task[]>(initialTasks)
+  const [activeTask, setActiveTask] = useState<Task | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -60,23 +92,19 @@ export function KanbanBoard({ project, initialTasks }: KanbanBoardProps) {
     const activeId = active.id as string
     const overId = over.id as string
 
-    // Find the task being dragged
     const activeTask = tasks.find((t) => t.id === activeId)
     if (!activeTask) return
 
-    // Check if dropped on a column
     const columnIds = COLUMNS.map((c) => c.id)
-    if (columnIds.includes(overId as MockTask["status"])) {
-      // Dropped on a column - update status
+    if (columnIds.includes(overId as Task["status"])) {
       if (activeTask.status !== overId) {
         setTasks((prev) =>
           prev.map((t) =>
-            t.id === activeId ? { ...t, status: overId as MockTask["status"] } : t
+            t.id === activeId ? { ...t, status: overId as Task["status"] } : t
           )
         )
       }
     } else {
-      // Dropped on another task - reorder
       const overTask = tasks.find((t) => t.id === overId)
       if (overTask && activeTask.status === overTask.status) {
         const activeIndex = tasks.findIndex((t) => t.id === activeId)
@@ -96,7 +124,7 @@ export function KanbanBoard({ project, initialTasks }: KanbanBoardProps) {
     }),
   }
 
-  const getTasksByColumn = (columnId: MockTask["status"]) => {
+  const getTasksByColumn = (columnId: Task["status"]) => {
     return tasks
       .filter((task) => task.status === columnId)
       .sort((a, b) => a.order - b.order)
@@ -104,17 +132,16 @@ export function KanbanBoard({ project, initialTasks }: KanbanBoardProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <a
             href={`/projects/${project.id}`}
-            className="text-sm text-gray-500 hover:text-gray-900"
+            className="text-sm text-slate-500 hover:text-slate-100"
           >
             ← กลับไปที่โปรเจกต์
           </a>
           <span className="text-gray-300">|</span>
-          <h1 className="text-xl font-semibold">{project.name} - Task Board</h1>
+          <h1 className="text-xl font-semibold text-slate-100">{project.name} - Task Board</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
@@ -126,7 +153,6 @@ export function KanbanBoard({ project, initialTasks }: KanbanBoardProps) {
         </div>
       </div>
 
-      {/* Kanban Board */}
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
