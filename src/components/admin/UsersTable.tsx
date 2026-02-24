@@ -33,7 +33,7 @@ interface User {
   email: string
   avatar: string | null
   role: "SUPER_ADMIN" | "ADMIN" | "OFFICER" | "MEMBER"
-  createdAt: string
+  createdAt: Date
   _count: {
     ownedProjects: number
     assignedTasks: number
