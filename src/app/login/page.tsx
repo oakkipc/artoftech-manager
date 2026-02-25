@@ -44,37 +44,31 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      {/* Background decoration */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-violet-600/20 via-transparent to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-blue-600/20 via-transparent to-transparent rounded-full blur-3xl"></div>
-      </div>
-
-      <div className="relative w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="w-full max-w-sm px-6">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-600 to-blue-500 rounded-2xl mb-4 shadow-lg shadow-violet-500/25">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl mb-4">
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-white">AOT Manager</h1>
-          <p className="text-slate-400 mt-2">ระบบจัดการโปรเจกต์</p>
+          <h1 className="text-2xl font-bold text-white">AOT Manager</h1>
+          <p className="text-slate-400 mt-1 text-sm">ระบบจัดการโปรเจกต์</p>
         </div>
 
         {/* Login Form */}
-        <div className="relative bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-2xl">
-          <h2 className="text-xl font-semibold text-white mb-6">เข้าสู่ระบบ</h2>
+        <div className="bg-slate-800 rounded-2xl p-8">
+          <h2 className="text-lg font-medium text-white mb-6">เข้าสู่ระบบ</h2>
           
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg mb-4">
               {error}
             </div>
           )}
 
           <form onSubmit={handleLogin}>
-            <div className="mb-5">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 อีเมล
               </label>
@@ -82,8 +76,8 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
-                placeholder="your@email.com"
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+                placeholder="email@example.com"
                 required
               />
             </div>
@@ -96,7 +90,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
                 placeholder="••••••••"
                 required
               />
@@ -105,22 +99,22 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-violet-600 to-blue-600 text-white py-3 px-6 rounded-xl font-medium hover:from-violet-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25"
+              className="w-full bg-violet-600 text-white py-3 rounded-lg font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-slate-400">
+          <p className="mt-5 text-center text-slate-400 text-sm">
             ยังไม่มีบัญชี?{' '}
-            <a href="/register" className="text-violet-400 font-medium hover:text-violet-300">
+            <a href="/register" className="text-violet-400 hover:text-violet-300">
               สมัครสมาชิก
             </a>
           </p>
         </div>
 
-        <p className="text-center text-slate-500 text-sm mt-8">
-          © 2026 Art of Tech. All rights reserved.
+        <p className="text-center text-slate-500 text-xs mt-8">
+          © 2025 Art of Tech. All rights reserved.
         </p>
       </div>
     </div>
