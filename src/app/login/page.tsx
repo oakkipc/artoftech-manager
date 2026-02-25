@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Shield, Mail, Lock, Loader2, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
+import { Shield, Mail, Lock, Loader2, ArrowRight, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -31,82 +32,78 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('user', JSON.stringify(data.user))
-      
+
       if (data.user.role === 'SUPERADMIN' || data.user.role === 'ADMIN') {
         router.push('/admin/users')
       } else {
         router.push('/profile')
       }
     } catch (err) {
-      setError('เกิดข้อผิดพลาด กรุณาลองใหม่')
+      setError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Dynamic Background elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-600/10 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[#060612]">
+      {/* Subtle background glow */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-violet-600/[0.07] rounded-full blur-[150px] pointer-events-none" />
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 glass-dark rounded-3xl mb-6 relative group transition-all duration-500 hover:scale-110">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 to-indigo-600/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <Shield className="w-10 h-10 text-violet-500 group-hover:text-violet-400 transition-colors drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
+      <div className="w-full max-w-[400px] relative z-10">
+        {/* Brand */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 mb-5 shadow-lg shadow-violet-600/25">
+            <Shield className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2 text-glow">
+          <h1 className="text-2xl font-bold text-white tracking-tight">
             AOT Manager
           </h1>
-          <p className="text-midnight-400 text-lg font-medium">
-            Elevate your project workflow
+          <p className="text-sm text-slate-500 mt-1">
+            Admin Dashboard
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="glass-dark rounded-[2.5rem] p-10 border border-white/10 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-violet-500 to-transparent opacity-50" />
-          
-          <h2 className="text-2xl font-bold text-white mb-8">Sign In</h2>
-          
+        <div className="bg-[#0c0c1d] border border-white/[0.06] rounded-2xl p-8">
+          <h2 className="text-lg font-bold text-white mb-6">Sign in to your account</h2>
+
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-4 rounded-2xl mb-6 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
-              {error}
+            <div className="flex items-start gap-2.5 bg-red-500/[0.08] border border-red-500/20 text-red-400 text-sm p-3.5 rounded-xl mb-6">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-midnight-300 ml-1">
-                Email Address
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Email
               </label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-midnight-500 transition-colors group-focus-within:text-violet-500" />
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-midnight-950/50 border border-white/5 rounded-2xl text-white placeholder-midnight-600 focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 transition-all"
+                  className="w-full pl-11 pr-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white text-sm placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
                   placeholder="name@company.com"
                   required
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-midnight-300 ml-1">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Password
               </label>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-midnight-500 transition-colors group-focus-within:text-violet-500" />
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-midnight-950/50 border border-white/5 rounded-2xl text-white placeholder-midnight-600 focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 transition-all"
+                  className="w-full pl-11 pr-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white text-sm placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
                   placeholder="••••••••"
                   required
                 />
@@ -116,35 +113,33 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full group relative flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-4 rounded-2xl font-bold text-lg hover:from-violet-500 hover:to-indigo-500 transition-all duration-300 shadow-lg shadow-violet-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Signing In...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Signing in...
                 </>
               ) : (
                 <>
-                  <span>Sign In</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  Sign In
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 text-center">
-            <p className="text-midnight-400 text-sm">
-              Don&apos;t have an account?{' '}
-              <a href="/register" className="text-violet-400 font-bold hover:text-violet-300 transition-colors">
-                Create Account
-              </a>
-            </p>
-          </div>
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">
+              Create Account
+            </Link>
+          </p>
         </div>
 
-        <footer className="mt-12 text-center text-midnight-600 text-sm">
-          <p>© 2025 Art of Tech. All rights reserved.</p>
-        </footer>
+        <p className="text-center text-xs text-slate-700 mt-8">
+          © {new Date().getFullYear()} Art of Tech
+        </p>
       </div>
     </div>
   )
