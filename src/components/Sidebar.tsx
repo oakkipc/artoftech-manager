@@ -9,10 +9,11 @@ import {
     UserCircle,
     LogOut,
     Shield,
-    ChevronRight,
     LayoutDashboard,
     Menu,
-    X
+    X,
+    Pin,
+    LayoutGrid
 } from 'lucide-react'
 
 const navItems = [
@@ -37,17 +38,37 @@ const navItems = [
     }
 ]
 
+interface PinnedProject {
+    id: string
+    name: string
+}
+
 export function Sidebar() {
     const pathname = usePathname()
     const [user, setUser] = useState<any>(null)
     const [collapsed, setCollapsed] = useState(false)
+    const [pinnedProjects, setPinnedProjects] = useState<PinnedProject[]>([])
 
     useEffect(() => {
         const userStr = localStorage.getItem('user')
         if (userStr) {
             setUser(JSON.parse(userStr))
         }
+        fetchPinnedProjects()
     }, [])
+
+    const fetchPinnedProjects = async () => {
+        try {
+            const res = await fetch('/api/admin/projects')
+            const data = await res.json()
+            if (data.projects) {
+                const pinned = data.projects.filter((p: any) => p.pinned)
+                setPinnedProjects(pinned)
+            }
+        } catch (err) {
+            console.error(err)
+        }
+    }
 
     const handleLogout = () => {
         localStorage.removeItem('user')
@@ -68,7 +89,7 @@ export function Sidebar() {
             {/* Mobile toggle */}
             <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="fixed top-4 left-4 z-50 lg:hidden p-2 glass-dark rounded-xl border border-white/10"
+                className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-[#0a0a1a] rounded-xl border border-white/10"
             >
                 {collapsed ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
             </button>
@@ -104,7 +125,7 @@ export function Sidebar() {
 
                 {/* Navigation */}
                 <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
-                    {navItems.map((group) => (
+                    {navItems.map((group, groupIdx) => (
                         <div key={group.label} className="mb-6">
                             <div className="text-[10px] font-bold text-midnight-600 uppercase tracking-[0.2em] px-4 mb-2">
                                 {group.label}
@@ -136,6 +157,43 @@ export function Sidebar() {
                                     )
                                 })}
                             </div>
+
+                            {/* Pinned Projects — show right after MAIN group */}
+                            {groupIdx === 0 && pinnedProjects.length > 0 && (
+                                <div className="mt-3 pt-3 border-t border-white/[0.04]">
+                                    <div className="text-[10px] font-bold text-midnight-600 uppercase tracking-[0.2em] px-4 mb-2 flex items-center gap-1.5">
+                                        <Pin className="w-3 h-3" />
+                                        Pinned
+                                    </div>
+                                    <div className="space-y-1">
+                                        {pinnedProjects.map((project) => {
+                                            const isActive = pathname === `/projects/${project.id}`
+                                            return (
+                                                <Link
+                                                    key={project.id}
+                                                    href={`/projects/${project.id}`}
+                                                    onClick={() => setCollapsed(false)}
+                                                    className={`
+                                flex items-center justify-between px-4 py-2 rounded-xl transition-all duration-200 group/item
+                                ${isActive
+                                                            ? 'bg-gradient-to-r from-amber-600/15 to-orange-600/10 text-white border border-amber-500/20'
+                                                            : 'text-midnight-400 hover:bg-white/[0.04] hover:text-white border border-transparent'
+                                                        }
+                              `}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <LayoutGrid className={`w-[16px] h-[16px] ${isActive ? 'text-amber-400' : 'text-midnight-600 group-hover/item:text-amber-400 transition-colors'}`} />
+                                                        <span className="text-sm font-medium truncate">{project.name}</span>
+                                                    </div>
+                                                    {isActive && (
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
+                                                    )}
+                                                </Link>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </nav>
