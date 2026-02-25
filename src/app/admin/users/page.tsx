@@ -99,7 +99,12 @@ export default function AdminUsersPage() {
             <h1 className="text-lg font-semibold text-white">AOT Manager</h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-slate-300 text-sm">{currentUser?.name}</span>
+            <a
+              href="/profile"
+              className="text-slate-300 hover:text-white text-sm"
+            >
+              โปรไฟล์
+            </a>
             <button
               onClick={handleLogout}
               className="text-slate-400 hover:text-white text-sm"

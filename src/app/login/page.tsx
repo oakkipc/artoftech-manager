@@ -34,7 +34,7 @@ export default function LoginPage() {
       if (data.user.role === 'SUPERADMIN' || data.user.role === 'ADMIN') {
         router.push('/admin/users')
       } else {
-        router.push('/dashboard')
+        router.push('/profile')
       }
     } catch (err) {
       setError('เกิดข้อผิดพลาด กรุณาลองใหม่')
