@@ -7,7 +7,6 @@ const getAdminClient = () => {
     return createClient(supabaseUrl, serviceRoleKey)
 }
 
-// GET: Fetch projects visible to a user with task counts
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
@@ -19,51 +18,145 @@ export async function GET(request: Request) {
         let projects: any[] = []
 
         if (role === 'SUPERADMIN' || role === 'ADMIN') {
-            // Admins see all projects
             const { data, error } = await supabase
                 .from('projects')
                 .select('*')
                 .order('created_at', { ascending: false })
-
             if (error) throw error
             projects = data || []
         } else if (userId) {
-            // Regular users see only assigned projects
             const { data, error } = await supabase
                 .from('user_projects')
-                .select(`
-          project_id,
-          role,
-          projects:project_id (*)
-        `)
+                .select('project_id, role')
                 .eq('user_id', userId)
-
             if (error) throw error
-            projects = (data || []).map((up: any) => up.projects).filter(Boolean)
+            const projectIds = (data || []).map((up: any) => up.project_id)
+            if (projectIds.length > 0) {
+                const { data: projData } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .in('id', projectIds)
+                    .order('created_at', { ascending: false })
+                projects = projData || []
+            }
         }
 
-        // Get task counts for each project
-        const projectsWithCounts = await Promise.all(
-            projects.map(async (project: any) => {
-                const { data: tasks } = await supabase
-                    .from('tasks')
-                    .select('status')
-                    .eq('project_id', project.id)
+        // Get ALL tasks for these projects
+        const projectIds = projects.map(p => p.id)
+        let allTasks: any[] = []
 
-                const taskList = tasks || []
-                const total = taskList.length
-                const done = taskList.filter((t: any) => t.status === 'DONE').length
-                const inProgress = taskList.filter((t: any) => t.status === 'IN_PROGRESS').length
-                const todo = taskList.filter((t: any) => t.status === 'TODO').length
+        if (projectIds.length > 0) {
+            const { data: tasksData } = await supabase
+                .from('tasks')
+                .select('*')
+                .in('project_id', projectIds)
+            allTasks = tasksData || []
+        }
 
-                return {
-                    ...project,
-                    taskCounts: { total, done, inProgress, todo }
-                }
-            })
-        )
+        // Fetch assigned users for tasks
+        const userIds = [...new Set(allTasks.filter(t => t.assigned_to).map(t => t.assigned_to))]
+        let usersMap: Record<string, any> = {}
+        if (userIds.length > 0) {
+            const { data: usersData } = await supabase
+                .from('users')
+                .select('id, name, email')
+                .in('id', userIds)
+            if (usersData) usersMap = Object.fromEntries(usersData.map(u => [u.id, u]))
+        }
 
-        return NextResponse.json({ projects: projectsWithCounts })
+        // Get team members count per project
+        let memberCounts: Record<string, number> = {}
+        if (projectIds.length > 0) {
+            const { data: upData } = await supabase
+                .from('user_projects')
+                .select('project_id')
+                .in('project_id', projectIds)
+            if (upData) {
+                upData.forEach((up: any) => {
+                    memberCounts[up.project_id] = (memberCounts[up.project_id] || 0) + 1
+                })
+            }
+        }
+
+        // Compute per-project stats
+        const now = new Date()
+        const projectsWithCounts = projects.map((project: any) => {
+            const projectTasks = allTasks.filter(t => t.project_id === project.id)
+            const total = projectTasks.length
+            const done = projectTasks.filter(t => t.status === 'DONE').length
+            const inProgress = projectTasks.filter(t => t.status === 'IN_PROGRESS').length
+            const todo = projectTasks.filter(t => t.status === 'TODO').length
+            const overdue = projectTasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'DONE').length
+
+            return {
+                ...project,
+                memberCount: memberCounts[project.id] || 0,
+                taskCounts: { total, done, inProgress, todo, overdue }
+            }
+        })
+
+        // Global stats
+        const totalTasks = allTasks.length
+        const totalDone = allTasks.filter(t => t.status === 'DONE').length
+        const totalInProgress = allTasks.filter(t => t.status === 'IN_PROGRESS').length
+        const totalTodo = allTasks.filter(t => t.status === 'TODO').length
+        const totalOverdue = allTasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'DONE').length
+
+        // Upcoming deadlines (next 7 days, not done)
+        const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+        const upcomingTasks = allTasks
+            .filter(t => t.due_date && new Date(t.due_date) >= now && new Date(t.due_date) <= in7Days && t.status !== 'DONE')
+            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+            .slice(0, 5)
+            .map(t => ({
+                ...t,
+                assigned_user: t.assigned_to ? usersMap[t.assigned_to] || null : null,
+                projectName: projects.find((p: any) => p.id === t.project_id)?.name || ''
+            }))
+
+        // Overdue tasks
+        const overdueTasks = allTasks
+            .filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'DONE')
+            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+            .slice(0, 5)
+            .map(t => ({
+                ...t,
+                assigned_user: t.assigned_to ? usersMap[t.assigned_to] || null : null,
+                projectName: projects.find((p: any) => p.id === t.project_id)?.name || ''
+            }))
+
+        // My tasks (assigned to current user, not done)
+        const myTasks = userId
+            ? allTasks
+                .filter(t => t.assigned_to === userId && t.status !== 'DONE')
+                .sort((a, b) => {
+                    // Overdue first, then by due date, then no-date last
+                    const aDate = a.due_date ? new Date(a.due_date).getTime() : Infinity
+                    const bDate = b.due_date ? new Date(b.due_date).getTime() : Infinity
+                    return aDate - bDate
+                })
+                .map(t => ({
+                    ...t,
+                    assigned_user: t.assigned_to ? usersMap[t.assigned_to] || null : null,
+                    projectName: projects.find((p: any) => p.id === t.project_id)?.name || ''
+                }))
+            : []
+
+        return NextResponse.json({
+            projects: projectsWithCounts,
+            stats: {
+                totalProjects: projects.length,
+                totalTasks,
+                totalDone,
+                totalInProgress,
+                totalTodo,
+                totalOverdue,
+                completionRate: totalTasks > 0 ? Math.round((totalDone / totalTasks) * 100) : 0
+            },
+            upcomingTasks,
+            overdueTasks,
+            myTasks
+        })
     } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }

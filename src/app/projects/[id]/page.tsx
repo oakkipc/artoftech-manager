@@ -14,7 +14,11 @@ import {
     CheckSquare,
     Square,
     UserPlus,
-    Users
+    Users,
+    ListTodo,
+    Clock,
+    CheckCircle2,
+    AlertTriangle
 } from 'lucide-react'
 
 interface ChecklistItem {
@@ -320,6 +324,86 @@ export default function ProjectDetailPage() {
 
                 {/* Kanban Board */}
                 <div className="flex-1 p-6 overflow-x-auto">
+                    {/* Project Overview Mini-Dashboard */}
+                    {(() => {
+                        const total = tasks.length
+                        const todo = tasks.filter(t => t.status === 'TODO').length
+                        const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length
+                        const done = tasks.filter(t => t.status === 'DONE').length
+                        const now = new Date()
+                        const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'DONE').length
+                        const completion = total > 0 ? Math.round((done / total) * 100) : 0
+
+                        return (
+                            <div className="mb-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                    <div className="w-8 h-8 bg-cyan-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                        <ListTodo className="w-4 h-4 text-cyan-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-bold text-white leading-none">{total}</p>
+                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Total</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                    <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                        <ListTodo className="w-4 h-4 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-bold text-white leading-none">{todo}</p>
+                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">To Do</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                    <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                        <Clock className="w-4 h-4 text-amber-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-bold text-white leading-none">{inProgress}</p>
+                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Active</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                    <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-bold text-white leading-none">{done}</p>
+                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Done</p>
+                                    </div>
+                                </div>
+                                {overdue > 0 && (
+                                    <div className="bg-white/[0.02] border border-red-500/20 rounded-xl p-3 flex items-center gap-2.5">
+                                        <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                            <AlertTriangle className="w-4 h-4 text-red-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-lg font-bold text-white leading-none">{overdue}</p>
+                                            <p className="text-[10px] text-midnight-600 font-medium uppercase">Overdue</p>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                    <div className="w-8 h-8 bg-violet-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                        <Users className="w-4 h-4 text-violet-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-bold text-white leading-none">{members.length}</p>
+                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Members</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Progress</p>
+                                        <p className="text-sm font-bold text-white">{completion}%</p>
+                                    </div>
+                                    <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                                        <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500" style={{ width: `${completion}%` }} />
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })()}
                     <div className="flex gap-4 min-h-[calc(100vh-120px)]" style={{ minWidth: 'max-content' }}>
                         {COLUMNS.map((column) => {
                             const columnTasks = getColumnTasks(column.key)
