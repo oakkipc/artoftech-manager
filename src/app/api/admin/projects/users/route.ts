@@ -13,28 +13,43 @@ export async function GET(request: Request) {
 
   try {
     const supabase = getAdminClient()
-    
+
     let query = supabase
       .from('user_projects')
-      .select(`
-        id,
-        role,
-        user_id,
-        project_id,
-        users:user_id (id, name, email)
-      `)
+      .select('id, role, user_id, project_id')
 
     if (projectId) {
       query = query.eq('project_id', projectId)
     }
 
-    const { data, error } = await query
+    const { data: userProjects, error } = await query
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ userProjects: data })
+    // Fetch user details separately
+    const userIds = [...new Set((userProjects || []).map((up: any) => up.user_id))]
+    let usersMap: Record<string, any> = {}
+
+    if (userIds.length > 0) {
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .in('id', userIds)
+
+      if (usersData) {
+        usersMap = Object.fromEntries(usersData.map((u: any) => [u.id, u]))
+      }
+    }
+
+    // Combine the data
+    const result = (userProjects || []).map((up: any) => ({
+      ...up,
+      users: usersMap[up.user_id] || null
+    }))
+
+    return NextResponse.json({ userProjects: result })
   } catch (error) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
@@ -49,13 +64,13 @@ export async function POST(request: Request) {
     }
 
     const supabase = getAdminClient()
-    
+
     const { data, error } = await supabase
       .from('user_projects')
-      .upsert({ 
-        user_id: userId, 
-        project_id: projectId, 
-        role: role || 'VIEWER' 
+      .upsert({
+        user_id: userId,
+        project_id: projectId,
+        role: role || 'VIEWER'
       }, { onConflict: 'user_id,project_id' })
       .select()
       .single()
@@ -76,7 +91,7 @@ export async function DELETE(request: Request) {
 
   try {
     const supabase = getAdminClient()
-    
+
     const { error } = await supabase
       .from('user_projects')
       .delete()
