@@ -1,66 +1,70 @@
-import { NextRequest, NextResponse } from "next/server"
-import bcrypt from "bcryptjs"
-import { prisma } from "@/lib/prisma"
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-export async function POST(request: NextRequest) {
+// Admin client for server-side operations
+const getAdminClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  return createClient(supabaseUrl, serviceRoleKey)
+}
+
+export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { name, email, password } = body
+    const { email, password, name } = await request.json()
 
-    // Validation
-    if (!name || !email || !password) {
+    if (!email || !password || !name) {
       return NextResponse.json(
-        { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },
+        { error: 'กรุณากรอกข้อมูลให้ครบถ้วน' },
         { status: 400 }
       )
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" },
-        { status: 400 }
-      )
-    }
+    const supabase = getAdminClient()
 
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    // Check if email already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('email', email)
+      .single()
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "อีเมลนี้ถูกใช้งานแล้ว" },
+        { error: 'อีเมลนี้ถูกใช้งานแล้ว' },
         { status: 400 }
       )
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
+    // Hash password (simple base64 for demo - use bcrypt in production)
+    const hashedPassword = Buffer.from(password).toString('base64')
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
+    // Insert new user with PENDING status
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
         email,
+        name,
         password: hashedPassword,
-        role: "MEMBER"
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true
-      }
-    })
+        role: 'PENDING',
+        avatar: null,
+      })
+      .select()
+      .single()
 
+    if (error) {
+      return NextResponse.json(
+        { error        { status:: error.message },
+ 500 }
+      )
+    }
+
+    return NextResponse.json({
+      message: 'สมัครสำเร็จ! กรุณารอการอนุมัติจากผู้ดูแลระบบ',
+      user: { id: data.id, email: data.email, role: data.role }
+    })
+  } catch (error) {
     return NextResponse.json(
-      { message: "สมัครสมาชิกสำเร็จ", user },
-      { status: 201 }
-    )
-  } catch (error: any) {
-    console.error("Register error:", error)
-    return NextResponse.json(
-      { error: error.message || "เกิดข้อผิดพลาด กรุณาลองใหม่" },
+      { error: 'เกิดข้อผิดพลาด' },
       { status: 500 }
     )
   }
