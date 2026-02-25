@@ -19,7 +19,7 @@ const navItems = [
     {
         label: 'MAIN',
         items: [
-            { name: 'Dashboard', href: '/admin/users', icon: LayoutDashboard },
+            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         ]
     },
     {

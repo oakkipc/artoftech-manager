@@ -32,12 +32,7 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('user', JSON.stringify(data.user))
-
-      if (data.user.role === 'SUPERADMIN' || data.user.role === 'ADMIN') {
-        router.push('/admin/users')
-      } else {
-        router.push('/profile')
-      }
+      router.push('/dashboard')
     } catch (err) {
       setError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่')
     } finally {
