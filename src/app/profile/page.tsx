@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Sidebar } from '@/components/Sidebar'
 import {
   User,
@@ -11,8 +12,21 @@ import {
   Save,
   Loader2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  LayoutGrid,
+  ArrowRight
 } from 'lucide-react'
+
+interface UserProject {
+  project_id: string
+  role: string
+  projects: {
+    id: string
+    name: string
+    description: string | null
+    status: string
+  }
+}
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -22,13 +36,29 @@ export default function ProfilePage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [userProjects, setUserProjects] = useState<UserProject[]>([])
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
-    if (userStr) setCurrentUser(JSON.parse(userStr))
-    else router.push('/login')
+    if (userStr) {
+      const user = JSON.parse(userStr)
+      setCurrentUser(user)
+      fetchUserProjects(user.id)
+    } else {
+      router.push('/login')
+    }
     setLoading(false)
   }, [])
+
+  const fetchUserProjects = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/profile/projects?userId=${userId}`)
+      const data = await res.json()
+      if (data.projects) setUserProjects(data.projects)
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,6 +87,7 @@ export default function ProfilePage() {
       ADMIN: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
       OFFICER: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
       MEMBER: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      VIEWER: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
     }
     return map[role] || 'bg-slate-500/10 text-slate-400 border-slate-500/20'
   }
@@ -80,10 +111,10 @@ export default function ProfilePage() {
           <p className="text-sm text-midnight-500">Manage your profile and security</p>
         </div>
 
-        <div className="p-8 max-w-3xl">
+        <div className="p-8 max-w-4xl">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Profile Card */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-4">
               <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6 text-center">
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg shadow-violet-600/20">
                   {currentUser?.name?.charAt(0)?.toUpperCase()}
@@ -96,7 +127,7 @@ export default function ProfilePage() {
                 </span>
               </div>
 
-              <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6 mt-4 space-y-4">
+              <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6 space-y-4">
                 <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider">Details</h4>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center"><User className="w-4 h-4 text-midnight-500" /></div>
@@ -105,6 +136,45 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center"><Mail className="w-4 h-4 text-midnight-500" /></div>
                   <div><p className="text-[11px] text-midnight-600 uppercase">Email</p><p className="text-sm text-white font-medium">{currentUser?.email}</p></div>
+                </div>
+              </div>
+
+              {/* Projects Section */}
+              <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <LayoutGrid className="w-4 h-4 text-violet-400" />
+                  <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider">My Projects</h4>
+                  <span className="text-xs text-midnight-600 bg-white/[0.04] px-2 py-0.5 rounded-md font-medium ml-auto">
+                    {userProjects.length}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {userProjects.map((up) => (
+                    <Link
+                      key={up.project_id}
+                      href={`/projects/${up.projects.id}`}
+                      className="flex items-center justify-between p-3 bg-white/[0.03] rounded-lg border border-white/[0.04] hover:border-violet-500/20 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                          <LayoutGrid className="w-4 h-4 text-violet-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-white">{up.projects.name}</p>
+                          <p className="text-[11px] text-midnight-600">{up.projects.description || 'No description'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase ${getRoleColor(up.role)}`}>
+                          {up.role}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-midnight-700 group-hover:text-violet-400 transition-colors" />
+                      </div>
+                    </Link>
+                  ))}
+                  {userProjects.length === 0 && (
+                    <p className="text-center text-midnight-600 text-sm py-4">No projects assigned</p>
+                  )}
                 </div>
               </div>
             </div>
