@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
 
 const getAdminClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -19,17 +20,47 @@ export async function POST(request: Request) {
     }
 
     const supabase = getAdminClient()
-    const hashedPassword = Buffer.from(password).toString('base64')
 
-    // Find user by email and password
+    // Find user by email only
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, name, role, avatar')
+      .select('id, email, password, name, role, avatar')
       .eq('email', email)
-      .eq('password', hashedPassword)
-      .single()
+      .maybeSingle()
 
     if (error || !user) {
+      return NextResponse.json(
+        { error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' },
+        { status: 401 }
+      )
+    }
+
+    // Attempt to verify with bcrypt
+    let isMatch = false
+    try {
+      isMatch = await bcrypt.compare(password, user.password)
+    } catch (e) {
+      // bcrypt check failed, likely not a bcrypt hash
+    }
+
+    // Fallback for auto-migration: check if it's the old Base64 format
+    if (!isMatch) {
+      const oldHashedPassword = Buffer.from(password).toString('base64')
+      if (user.password === oldHashedPassword) {
+        // Match found with old format! Auto-migrate to bcrypt now
+        const salt = await bcrypt.genSalt(10)
+        const newHashedPassword = await bcrypt.hash(password, salt)
+
+        await supabase
+          .from('users')
+          .update({ password: newHashedPassword })
+          .eq('id', user.id)
+
+        isMatch = true
+      }
+    }
+
+    if (!isMatch) {
       return NextResponse.json(
         { error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' },
         { status: 401 }

@@ -2,6 +2,19 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  Shield,
+  User,
+  Mail,
+  Lock,
+  UserPlus,
+  ArrowRight,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ChevronLeft
+} from 'lucide-react'
+import Link from 'next/link'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -55,7 +68,7 @@ export default function RegisterPage() {
       }
 
       setSuccess(data.message)
-      
+
       setTimeout(() => {
         router.push('/login')
       }, 2000)
@@ -67,115 +80,156 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-midnight-950">
+      {/* Dynamic Background elements */}
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-600/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1.5s' }} />
+
+      <div className="w-full max-w-lg relative z-10">
+        {/* Header Section */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl mb-4">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
+          <Link href="/login" className="inline-flex items-center gap-2 text-midnight-400 hover:text-white transition-colors mb-8 group">
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-bold uppercase tracking-widest">Back to Login</span>
+          </Link>
+
+          <div className="inline-flex items-center justify-center w-20 h-20 glass-dark rounded-3xl mb-6 relative group transition-all duration-500 hover:scale-110">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 to-indigo-600/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Shield className="w-10 h-10 text-violet-500 group-hover:text-violet-400 transition-colors drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
           </div>
-          <h1 className="text-2xl font-bold text-white">AOT Manager</h1>
-          <p className="text-slate-400 mt-1 text-sm">สมัครสมาชิกใหม่</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2 text-glow">
+            Join AOT Manager
+          </h1>
+          <p className="text-midnight-400 text-lg font-medium">
+            Create your account and start building
+          </p>
         </div>
 
-        {/* Register Form */}
-        <div className="bg-slate-800 rounded-2xl p-8">
-          <h2 className="text-lg font-medium text-white mb-6">สร้างบัญชี</h2>
-          
+        {/* Register Card */}
+        <div className="glass-dark rounded-[2.5rem] p-10 border border-white/10 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
+
+          <h2 className="text-2xl font-bold text-white mb-8">Create Account</h2>
+
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg mb-4">
-              {error}
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-4 rounded-2xl mb-8 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="font-medium">{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm p-3 rounded-lg mb-4">
-              {success}
+            <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm p-4 rounded-2xl mb-8 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+              <span className="font-medium">{success}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                ชื่อ-นามสกุล
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-midnight-300 ml-1">
+                Full Name
               </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-                placeholder="ชื่อของคุณ"
-                required
-              />
+              <div className="relative group">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-midnight-500 group-focus-within:text-indigo-400 transition-colors" />
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full pl-12 pr-4 py-4 bg-midnight-950/50 border border-white/5 rounded-2xl text-white placeholder-midnight-700 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none"
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                อีเมล
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-midnight-300 ml-1">
+                Email Address
               </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-                placeholder="email@example.com"
-                required
-              />
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-midnight-500 group-focus-within:text-indigo-400 transition-colors" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full pl-12 pr-4 py-4 bg-midnight-950/50 border border-white/5 rounded-2xl text-white placeholder-midnight-700 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none"
+                  placeholder="john@example.com"
+                  required
+                />
+              </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                รหัสผ่าน
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-                placeholder="••••••••"
-                required
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-midnight-300 ml-1">
+                  Password
+                </label>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-midnight-500 group-focus-within:text-indigo-400 transition-colors" />
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-4 py-4 bg-midnight-950/50 border border-white/5 rounded-2xl text-white placeholder-midnight-700 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                ยืนยันรหัสผ่าน
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-                placeholder="••••••••"
-                required
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-midnight-300 ml-1">
+                  Confirm Password
+                </label>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-midnight-500 group-focus-within:text-indigo-400 transition-colors" />
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-4 py-4 bg-midnight-950/50 border border-white/5 rounded-2xl text-white placeholder-midnight-700 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-violet-600 text-white py-3 rounded-lg font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed mt-4 group"
             >
-              {loading ? 'กำลังสมัคร...' : 'สมัครสมาชิก'}
+              {loading ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <span>Creating Account...</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                  <span>Start Your Journey</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform opacity-50" />
+                </>
+              )}
             </button>
           </form>
 
-          <p className="mt-5 text-center text-slate-400 text-sm">
-            มีบัญชีอยู่แล้ว?{' '}
-            <a href="/login" className="text-violet-400 hover:text-violet-300">
-              เข้าสู่ระบบ
-            </a>
+          <p className="mt-8 text-center text-midnight-400 font-medium">
+            Already a member?{' '}
+            <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-bold transition-colors">
+              Sign In
+            </Link>
           </p>
         </div>
 
-        <p className="text-center text-slate-500 text-xs mt-8">
-          © 2025 Art of Tech. All rights reserved.
+        <p className="text-center text-midnight-600 text-sm mt-12 font-medium">
+          © {new Date().getFullYear()} Art of Tech. Premium Interface Systems.
         </p>
       </div>
     </div>

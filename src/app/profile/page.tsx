@@ -2,12 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Sidebar } from '@/components/Sidebar'
+import {
+  User,
+  Mail,
+  Shield,
+  Lock,
+  Save,
+  Loader2,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react'
 
 export default function ProfilePage() {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  
+
   const [passwords, setPasswords] = useState({
     current: '',
     new: '',
@@ -27,11 +38,6 @@ export default function ProfilePage() {
     }
     setLoading(false)
   }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('user')
-    router.push('/login')
-  }
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,124 +85,172 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-white">กำลังโหลด...</div>
+      <div className="min-h-screen bg-midnight-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+          <p className="text-midnight-400 font-medium animate-pulse">Loading profile...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <h1 className="text-lg font-semibold text-white">AOT Manager</h1>
+    <div className="min-h-screen bg-midnight-950 flex">
+      <Sidebar />
+
+      <main className="flex-1 p-10 overflow-auto">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-10">
+            <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2 text-glow">
+              Account Settings
+            </h1>
+            <p className="text-midnight-400 font-medium text-lg">
+              Manage your profile and security credentials
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <a href="/admin/users" className="text-slate-300 hover:text-white text-sm">จัดการผู้ใช้</a>
-            <button onClick={handleLogout} className="text-slate-400 hover:text-white text-sm">
-              ออกจากระบบ
-            </button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column: Profile Info */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="glass-dark rounded-[2.5rem] p-8 border border-white/10 relative overflow-hidden text-center">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-indigo-600 opacity-50" />
+
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 p-1 mx-auto mb-6 shadow-xl shadow-violet-600/20">
+                  <div className="w-full h-full rounded-full bg-midnight-900 flex items-center justify-center text-white text-3xl font-bold border-2 border-white/10 overflow-hidden">
+                    {currentUser?.name?.charAt(0)}
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-1">{currentUser?.name}</h3>
+                <p className="text-midnight-500 text-sm font-medium mb-6">{currentUser?.email}</p>
+
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-violet-600/10 text-violet-400 text-xs font-bold rounded-full border border-violet-600/20 uppercase tracking-widest">
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>{currentUser?.role}</span>
+                </div>
+              </div>
+
+              <div className="glass-dark rounded-[2.5rem] p-8 border border-white/10 space-y-6">
+                <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4">Account Details</h4>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-midnight-500">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-midnight-500 font-bold uppercase tracking-tighter">Full Name</p>
+                      <p className="text-white font-medium">{currentUser?.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-midnight-500">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-midnight-500 font-bold uppercase tracking-tighter">Email Address</p>
+                      <p className="text-white font-medium">{currentUser?.email}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Security/Forms */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="glass-dark rounded-[2.5rem] p-10 border border-white/10 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-violet-500 to-transparent opacity-30" />
+
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 bg-violet-600/10 rounded-xl flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-violet-500" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white tracking-tight">Update Password</h3>
+                </div>
+
+                {message && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-2xl mb-8 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span className="text-sm font-medium">{message}</span>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl mb-8 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                    <AlertCircle className="w-5 h-5" />
+                    <span className="text-sm font-medium">{error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleChangePassword} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="col-span-full space-y-2">
+                      <label className="block text-sm font-bold text-midnight-300 ml-1">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwords.current}
+                        onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+                        className="w-full px-5 py-4 bg-midnight-950/50 border border-white/5 rounded-2xl text-white placeholder-midnight-700 focus:outline-none focus:border-violet-500/50 transition-all shadow-inner"
+                        placeholder="••••••••"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-midnight-300 ml-1">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwords.new}
+                        onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                        className="w-full px-5 py-4 bg-midnight-950/50 border border-white/5 rounded-2xl text-white placeholder-midnight-700 focus:outline-none focus:border-violet-500/50 transition-all shadow-inner"
+                        placeholder="••••••••"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-midnight-300 ml-1">
+                        Confirm New Password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwords.confirm}
+                        onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                        className="w-full px-5 py-4 bg-midnight-950/50 border border-white/5 rounded-2xl text-white placeholder-midnight-700 focus:outline-none focus:border-violet-500/50 transition-all shadow-inner"
+                        placeholder="••••••••"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-2xl hover:scale-105 transition-all shadow-lg shadow-violet-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Updating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-5 h-5" />
+                          <span>Save Changes</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="max-w-2xl mx-auto px-6 py-8">
-        <h2 className="text-xl font-semibold text-white mb-6">โปรไฟล์</h2>
-
-        {/* User Info */}
-        <div className="bg-slate-800 rounded-2xl p-6 mb-6">
-          <h3 className="text-lg font-medium text-white mb-4">ข้อมูลผู้ใช้</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-slate-400">ชื่อ</span>
-              <span className="text-white">{currentUser?.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">อีเมล</span>
-              <span className="text-white">{currentUser?.email}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">สถานะ</span>
-              <span className="text-white">{currentUser?.role}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Change Password */}
-        <div className="bg-slate-800 rounded-2xl p-6">
-          <h3 className="text-lg font-medium text-white mb-4">เปลี่ยนรหัสผ่าน</h3>
-          
-          {message && (
-            <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-lg mb-4 text-sm">
-              {message}
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg mb-4 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleChangePassword}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                รหัสผ่านปัจจุบัน
-              </label>
-              <input
-                type="password"
-                value={passwords.current}
-                onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                รหัสผ่านใหม่
-              </label>
-              <input
-                type="password"
-                value={passwords.new}
-                onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                ยืนยันรหัสผ่านใหม่
-              </label>
-              <input
-                type="password"
-                value={passwords.confirm}
-                onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full bg-violet-600 text-white py-3 rounded-lg font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? 'กำลังบันทึก...' : 'เปลี่ยนรหัสผ่าน'}
-            </button>
-          </form>
         </div>
       </main>
     </div>

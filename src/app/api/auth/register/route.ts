@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
 
 // Admin client for server-side operations
 const getAdminClient = () => {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
       .from('users')
       .select('id, email')
       .eq('email', email)
-      .single()
+      .maybeSingle()
 
     if (existingUser) {
       return NextResponse.json(
@@ -35,8 +36,9 @@ export async function POST(request: Request) {
       )
     }
 
-    // Hash password (simple base64 for demo - use bcrypt in production)
-    const hashedPassword = Buffer.from(password).toString('base64')
+    // Hash password with bcrypt
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt)
 
     // Insert new user with PENDING status
     const { data, error } = await supabase
