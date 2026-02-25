@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import bcrypt from 'bcryptjs'
+import * as bcrypt from 'bcryptjs'
 
 // Admin client for server-side operations
 const getAdminClient = () => {
