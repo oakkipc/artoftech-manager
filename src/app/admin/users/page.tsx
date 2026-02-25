@@ -17,6 +17,9 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [showRoleModal, setShowRoleModal] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [selectedRole, setSelectedRole] = useState('MEMBER')
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
@@ -24,7 +27,7 @@ export default function AdminUsersPage() {
       const user = JSON.parse(userStr)
       setCurrentUser(user)
       if (user.role !== 'SUPERADMIN' && user.role !== 'ADMIN') {
-        router.push('/dashboard')
+        router.push('/profile')
       }
     } else {
       router.push('/login')
@@ -46,16 +49,25 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleApprove = async (userId: string, role: string = 'MEMBER') => {
+  const handleApprove = async (user: User) => {
+    setSelectedUser(user)
+    setSelectedRole('MEMBER')
+    setShowRoleModal(true)
+  }
+
+  const confirmApprove = async () => {
+    if (!selectedUser) return
+
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, newRole: role })
+        body: JSON.stringify({ userId: selectedUser.id, newRole: selectedRole })
       })
       
       if (res.ok) {
         fetchUsers()
+        setShowRoleModal(false)
       }
     } catch (err) {
       console.error(err)
@@ -71,10 +83,22 @@ export default function AdminUsersPage() {
     const styles: any = {
       SUPERADMIN: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
       ADMIN: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      OFFICER: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
       MEMBER: 'bg-green-500/20 text-green-400 border-green-500/30',
       PENDING: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
     }
     return styles[role] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+  }
+
+  const getRoleLabel = (role: string) => {
+    const labels: any = {
+      SUPERADMIN: 'Super Admin',
+      ADMIN: 'Admin',
+      OFFICER: 'Officer',
+      MEMBER: 'Member',
+      PENDING: 'รออนุมัติ'
+    }
+    return labels[role] || role
   }
 
   if (loading) {
@@ -99,16 +123,8 @@ export default function AdminUsersPage() {
             <h1 className="text-lg font-semibold text-white">AOT Manager</h1>
           </div>
           <div className="flex items-center gap-4">
-            <a
-              href="/profile"
-              className="text-slate-300 hover:text-white text-sm"
-            >
-              โปรไฟล์
-            </a>
-            <button
-              onClick={handleLogout}
-              className="text-slate-400 hover:text-white text-sm"
-            >
+            <a href="/profile" className="text-slate-300 hover:text-white text-sm">โปรไฟล์</a>
+            <button onClick={handleLogout} className="text-slate-400 hover:text-white text-sm">
               ออกจากระบบ
             </button>
           </div>
@@ -117,7 +133,9 @@ export default function AdminUsersPage() {
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
-        <h2 className="text-xl font-semibold text-white mb-6">จัดการผู้ใช้งาน</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-white">จัดการผู้ใช้งาน</h2>
+        </div>
 
         {/* Users Table */}
         <div className="bg-slate-800 rounded-2xl overflow-hidden">
@@ -138,7 +156,7 @@ export default function AdminUsersPage() {
                   <td className="px-6 py-4 text-slate-300">{user.email}</td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadge(user.role)}`}>
-                      {user.role === 'PENDING' ? 'รออนุมัติ' : user.role}
+                      {getRoleLabel(user.role)}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-slate-400 text-sm">
@@ -146,20 +164,12 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     {user.role === 'PENDING' ? (
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => handleApprove(user.id, 'MEMBER')}
-                          className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg"
-                        >
-                          อนุมัติ
-                        </button>
-                        <button
-                          onClick={() => handleApprove(user.id, 'ADMIN')}
-                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg"
-                        >
-                          ทำเป็น Admin
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleApprove(user)}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg"
+                      >
+                        อนุมัติ
+                      </button>
                     ) : (
                       <span className="text-slate-500 text-sm">-</span>
                     )}
@@ -176,6 +186,59 @@ export default function AdminUsersPage() {
           )}
         </div>
       </main>
+
+      {/* Role Selection Modal */}
+      {showRoleModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-white mb-4">เลือกสิทธิ์</h3>
+            <p className="text-slate-300 mb-4">อนุมัติผู้ใช้: <span className="text-white">{selectedUser?.name}</span></p>
+            
+            <div className="space-y-3 mb-6">
+              {['MEMBER', 'OFFICER', 'ADMIN'].map((role) => (
+                <label
+                  key={role}
+                  className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedRole === role
+                      ? 'border-violet-500 bg-violet-500/10'
+                      : 'border-slate-700 hover:border-slate-600'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="role"
+                    value={role}
+                    checked={selectedRole === role}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    className="sr-only"
+                  />
+                  <span className={`w-4 h-4 rounded-full border mr-3 flex items-center justify-center ${
+                    selectedRole === role ? 'border-violet-500 bg-violet-500' : 'border-slate-500'
+                  }`}>
+                    {selectedRole === role && <span className="w-2 h-2 bg-white rounded-full" />}
+                  </span>
+                  <span className="text-white">{getRoleLabel(role)}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRoleModal(false)}
+                className="flex-1 px-4 py-2 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-700"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={confirmApprove}
+                className="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+              >
+                ยืนยัน
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
