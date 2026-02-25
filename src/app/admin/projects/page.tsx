@@ -9,10 +9,11 @@ import {
   Users,
   LayoutGrid,
   Clock,
-  UserPlus,
   Trash2,
   X,
-  Plus
+  Plus,
+  Pin,
+  PinOff
 } from 'lucide-react'
 
 interface Project {
@@ -20,6 +21,7 @@ interface Project {
   name: string
   description: string | null
   status: string
+  pinned: boolean
   created_at: string
 }
 
@@ -108,6 +110,21 @@ export default function AdminProjectsPage() {
     } catch (err) { console.error(err) }
   }
 
+  const handleTogglePin = async (project: Project) => {
+    // Optimistic update
+    setProjects(prev => prev.map(p => p.id === project.id ? { ...p, pinned: !p.pinned } : p))
+    try {
+      await fetch('/api/admin/projects', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: project.id, pinned: !project.pinned })
+      })
+    } catch (err) {
+      // Revert on error
+      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, pinned: project.pinned } : p))
+    }
+  }
+
   const handleAssignUser = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -149,6 +166,13 @@ export default function AdminProjectsPage() {
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.description?.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Sort: pinned first, then by created_at
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1
+    if (!a.pinned && b.pinned) return 1
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
 
   if (loading) {
     return (
@@ -195,17 +219,32 @@ export default function AdminProjectsPage() {
         <div className="p-8">
           {/* Project Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredProjects.map((project) => (
-              <div key={project.id} className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6 hover:border-violet-500/20 transition-all group">
+            {sortedProjects.map((project) => (
+              <div key={project.id} className={`bg-white/[0.02] border rounded-xl p-6 transition-all group ${project.pinned ? 'border-amber-500/20 ring-1 ring-amber-500/10' : 'border-white/[0.06] hover:border-violet-500/20'}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-10 h-10 bg-violet-500/10 rounded-lg flex items-center justify-center">
                     <LayoutGrid className="w-5 h-5 text-violet-400" />
                   </div>
-                  <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-md border border-emerald-500/20 uppercase">
-                    {project.status}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleTogglePin(project)}
+                      className={`p-1.5 rounded-md transition-all ${project.pinned
+                          ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                          : 'text-midnight-700 hover:text-amber-400 hover:bg-amber-500/10 opacity-0 group-hover:opacity-100'
+                        }`}
+                      title={project.pinned ? 'Unpin' : 'Pin to top'}
+                    >
+                      {project.pinned ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
+                    </button>
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-md border border-emerald-500/20 uppercase">
+                      {project.status}
+                    </span>
+                  </div>
                 </div>
-                <h3 className="text-base font-bold text-white mb-1">{project.name}</h3>
+                <h3 className="text-base font-bold text-white mb-1 flex items-center gap-2">
+                  {project.name}
+                  {project.pinned && <Pin className="w-3 h-3 text-amber-400" />}
+                </h3>
                 <p className="text-sm text-midnight-500 mb-5 line-clamp-2">
                   {project.description || 'No description'}
                 </p>

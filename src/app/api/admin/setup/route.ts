@@ -1,33 +1,48 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-export async function POST() {
+export async function GET() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-    // Use the Supabase SQL query endpoint directly
-    const response = await fetch(`${supabaseUrl}/rest/v1/`, {
-      method: 'GET',
-      headers: {
-        'apikey': serviceRoleKey,
-        'Authorization': `Bearer ${serviceRoleKey}`,
-      }
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      db: { schema: 'public' }
     })
 
-    // Try to create the table by inserting a test and catching the error
-    const supabase = createClient(supabaseUrl, serviceRoleKey)
+    // Try direct SQL via the pg_net or pg extension
+    // Use the Supabase connection string approach
+    const dbUrl = supabaseUrl.replace('https://', '').replace('.supabase.co', '')
 
-    // Check if tasks table exists by trying to query it
-    const { error: checkError } = await supabase
-      .from('tasks')
-      .select('id')
-      .limit(1)
+    // Execute raw SQL via fetch to the Supabase SQL endpoint
+    const res = await fetch(`${supabaseUrl}/pg`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({
+        query: `CREATE TABLE IF NOT EXISTS tasks (
+          id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+          project_id uuid REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
+          title text NOT NULL,
+          description text,
+          status text DEFAULT 'TODO' NOT NULL,
+          position integer DEFAULT 0 NOT NULL,
+          assigned_to uuid REFERENCES users(id) ON DELETE SET NULL,
+          created_at timestamptz DEFAULT now() NOT NULL
+        );`
+      })
+    })
 
-    if (checkError && checkError.message.includes('does not exist')) {
-      return NextResponse.json({
-        message: 'Tasks table does not exist. Please run this SQL in Supabase Dashboard SQL Editor:',
-        sql: `CREATE TABLE IF NOT EXISTS tasks (
+    if (res.ok) {
+      return NextResponse.json({ message: 'Tasks table created successfully' })
+    }
+
+    // If the pg endpoint doesn't work, return the SQL for manual execution
+    return NextResponse.json({
+      message: 'Please create the tasks table in Supabase Dashboard → SQL Editor:',
+      sql: `CREATE TABLE IF NOT EXISTS tasks (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id uuid REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
   title text NOT NULL,
@@ -36,11 +51,14 @@ export async function POST() {
   position integer DEFAULT 0 NOT NULL,
   assigned_to uuid REFERENCES users(id) ON DELETE SET NULL,
   created_at timestamptz DEFAULT now() NOT NULL
-);`
-      })
-    }
+);
 
-    return NextResponse.json({ message: 'Tasks table already exists!', exists: true })
+-- Enable RLS (optional)
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+
+-- Allow service role full access
+CREATE POLICY "Service role full access" ON tasks FOR ALL USING (true);`
+    })
   } catch (error) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
