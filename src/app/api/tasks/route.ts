@@ -19,12 +19,9 @@ export async function GET(request: Request) {
     try {
         const supabase = getAdminClient()
 
-        const { data, error } = await supabase
+        const { data: tasks, error } = await supabase
             .from('tasks')
-            .select(`
-        *,
-        assigned_user:assigned_to (id, name, email)
-      `)
+            .select('*')
             .eq('project_id', projectId)
             .order('position', { ascending: true })
 
@@ -32,7 +29,26 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
-        return NextResponse.json({ tasks: data })
+        // Fetch assigned users separately
+        const userIds = [...new Set((tasks || []).filter(t => t.assigned_to).map(t => t.assigned_to))]
+        let usersMap: Record<string, any> = {}
+
+        if (userIds.length > 0) {
+            const { data: usersData } = await supabase
+                .from('users')
+                .select('id, name, email')
+                .in('id', userIds)
+            if (usersData) {
+                usersMap = Object.fromEntries(usersData.map(u => [u.id, u]))
+            }
+        }
+
+        const enrichedTasks = (tasks || []).map(t => ({
+            ...t,
+            assigned_user: t.assigned_to ? usersMap[t.assigned_to] || null : null
+        }))
+
+        return NextResponse.json({ tasks: enrichedTasks })
     } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }
@@ -41,7 +57,7 @@ export async function GET(request: Request) {
 // POST: Create a new task
 export async function POST(request: Request) {
     try {
-        const { projectId, title, description, status, assignedTo } = await request.json()
+        const { projectId, title, description, status, assignedTo, dueDate } = await request.json()
 
         if (!projectId || !title) {
             return NextResponse.json({ error: 'projectId and title are required' }, { status: 400 })
@@ -49,7 +65,7 @@ export async function POST(request: Request) {
 
         const supabase = getAdminClient()
 
-        // Get the max position for this project + status
+        // Get the max position
         const { data: maxPos } = await supabase
             .from('tasks')
             .select('position')
@@ -69,19 +85,28 @@ export async function POST(request: Request) {
                 description: description || null,
                 status: status || 'TODO',
                 position,
-                assigned_to: assignedTo || null
+                assigned_to: assignedTo || null,
+                due_date: dueDate || null
             })
-            .select(`
-        *,
-        assigned_user:assigned_to (id, name, email)
-      `)
+            .select('*')
             .single()
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
-        return NextResponse.json({ task: data })
+        // Fetch assigned user
+        let assigned_user = null
+        if (data.assigned_to) {
+            const { data: userData } = await supabase
+                .from('users')
+                .select('id, name, email')
+                .eq('id', data.assigned_to)
+                .single()
+            assigned_user = userData
+        }
+
+        return NextResponse.json({ task: { ...data, assigned_user } })
     } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }

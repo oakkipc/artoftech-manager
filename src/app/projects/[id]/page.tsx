@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Sidebar } from '@/components/Sidebar'
@@ -10,9 +10,19 @@ import {
     X,
     GripVertical,
     Trash2,
-    User,
-    MoreHorizontal
+    Calendar,
+    CheckSquare,
+    Square,
+    UserPlus,
+    Users
 } from 'lucide-react'
+
+interface ChecklistItem {
+    id: string
+    title: string
+    completed: boolean
+    position: number
+}
 
 interface Task {
     id: string
@@ -20,9 +30,12 @@ interface Task {
     description: string | null
     status: string
     position: number
+    due_date: string | null
     assigned_to: string | null
     assigned_user: { id: string; name: string; email: string } | null
     created_at: string
+    // client-side enrichment
+    checklists?: ChecklistItem[]
 }
 
 interface Project {
@@ -60,6 +73,13 @@ export default function ProjectDetailPage() {
     // Drag state
     const [draggedTask, setDraggedTask] = useState<Task | null>(null)
     const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+
+    // Task detail modal
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+    const [taskChecklists, setTaskChecklists] = useState<ChecklistItem[]>([])
+    const [newChecklistTitle, setNewChecklistTitle] = useState('')
+    const [editingDescription, setEditingDescription] = useState(false)
+    const [tempDescription, setTempDescription] = useState('')
 
     useEffect(() => {
         const userStr = localStorage.getItem('user')
@@ -112,74 +132,147 @@ export default function ProjectDetailPage() {
         } catch (err) { console.error(err) }
     }
 
-    const handleDeleteTask = async (taskId: string) => {
+    const handleDeleteTask = async (taskId: string, e?: React.MouseEvent) => {
+        e?.stopPropagation()
         try {
             await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' })
             setTasks(prev => prev.filter(t => t.id !== taskId))
+            if (selectedTask?.id === taskId) setSelectedTask(null)
         } catch (err) { console.error(err) }
     }
 
-    // Drag & Drop handlers
+    // Task Detail Modal
+    const openTaskDetail = async (task: Task) => {
+        setSelectedTask(task)
+        setTempDescription(task.description || '')
+        setEditingDescription(false)
+        // Fetch checklists
+        try {
+            const res = await fetch(`/api/checklists?taskId=${task.id}`)
+            const data = await res.json()
+            if (data.checklists) setTaskChecklists(data.checklists)
+            else setTaskChecklists([])
+        } catch { setTaskChecklists([]) }
+    }
+
+    const updateTask = async (taskId: string, updates: any) => {
+        try {
+            const res = await fetch(`/api/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            })
+            const data = await res.json()
+            if (data.task) {
+                setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...data.task } : t))
+                if (selectedTask?.id === taskId) setSelectedTask(prev => prev ? { ...prev, ...data.task } : null)
+            }
+        } catch (err) { console.error(err) }
+    }
+
+    const handleSaveDescription = async () => {
+        if (!selectedTask) return
+        await updateTask(selectedTask.id, { description: tempDescription })
+        setEditingDescription(false)
+    }
+
+    const handleSetDueDate = async (date: string) => {
+        if (!selectedTask) return
+        await updateTask(selectedTask.id, { dueDate: date || null })
+    }
+
+    const handleAssignMember = async (userId: string) => {
+        if (!selectedTask) return
+        await updateTask(selectedTask.id, { assignedTo: userId || null })
+    }
+
+    // Checklist actions
+    const handleAddChecklist = async () => {
+        if (!newChecklistTitle.trim() || !selectedTask) return
+        try {
+            const res = await fetch('/api/checklists', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId: selectedTask.id, title: newChecklistTitle })
+            })
+            const data = await res.json()
+            if (data.checklist) {
+                setTaskChecklists(prev => [...prev, data.checklist])
+                setNewChecklistTitle('')
+            }
+        } catch (err) { console.error(err) }
+    }
+
+    const handleToggleChecklist = async (item: ChecklistItem) => {
+        // Optimistic
+        setTaskChecklists(prev => prev.map(c => c.id === item.id ? { ...c, completed: !c.completed } : c))
+        try {
+            await fetch('/api/checklists', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: item.id, completed: !item.completed })
+            })
+        } catch (err) { console.error(err) }
+    }
+
+    const handleDeleteChecklist = async (id: string) => {
+        setTaskChecklists(prev => prev.filter(c => c.id !== id))
+        try {
+            await fetch(`/api/checklists?id=${id}`, { method: 'DELETE' })
+        } catch (err) { console.error(err) }
+    }
+
+    // Drag & Drop
     const handleDragStart = (e: React.DragEvent, task: Task) => {
         setDraggedTask(task)
         e.dataTransfer.effectAllowed = 'move'
-        // Make drag image slightly transparent
-        const el = e.currentTarget as HTMLElement
-        setTimeout(() => el.style.opacity = '0.5', 0)
+        setTimeout(() => (e.currentTarget as HTMLElement).style.opacity = '0.5', 0)
     }
-
     const handleDragEnd = (e: React.DragEvent) => {
-        const el = e.currentTarget as HTMLElement
-        el.style.opacity = '1'
+        (e.currentTarget as HTMLElement).style.opacity = '1'
         setDraggedTask(null)
         setDragOverColumn(null)
     }
-
     const handleDragOver = (e: React.DragEvent, column: string) => {
         e.preventDefault()
         e.dataTransfer.dropEffect = 'move'
         setDragOverColumn(column)
     }
-
-    const handleDragLeave = () => {
-        setDragOverColumn(null)
-    }
+    const handleDragLeave = () => setDragOverColumn(null)
 
     const handleDrop = async (e: React.DragEvent, newStatus: string) => {
         e.preventDefault()
         setDragOverColumn(null)
-
-        if (!draggedTask || draggedTask.status === newStatus) {
-            setDraggedTask(null)
-            return
-        }
-
-        // Optimistically update UI
-        const updatedTasks = tasks.map(t => {
-            if (t.id === draggedTask.id) {
-                return { ...t, status: newStatus, position: getColumnTasks(newStatus).length }
-            }
-            return t
-        })
+        if (!draggedTask || draggedTask.status === newStatus) { setDraggedTask(null); return }
+        const updatedTasks = tasks.map(t =>
+            t.id === draggedTask.id ? { ...t, status: newStatus, position: getColumnTasks(newStatus).length } : t
+        )
         setTasks(updatedTasks)
-
-        // Persist to server
         try {
             await fetch(`/api/tasks/${draggedTask.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    status: newStatus,
-                    position: getColumnTasks(newStatus).length
-                })
+                body: JSON.stringify({ status: newStatus, position: getColumnTasks(newStatus).length })
             })
-        } catch (err) {
-            console.error(err)
-            // Revert on error
-            fetchAll()
-        }
-
+        } catch { fetchAll() }
         setDraggedTask(null)
+    }
+
+    // Helpers
+    const getDueDateColor = (dueDate: string | null) => {
+        if (!dueDate) return ''
+        const d = new Date(dueDate)
+        const now = new Date()
+        const diff = d.getTime() - now.getTime()
+        const days = diff / (1000 * 60 * 60 * 24)
+        if (days < 0) return 'text-red-400'
+        if (days < 3) return 'text-amber-400'
+        return 'text-midnight-500'
+    }
+
+    const checklistProgress = () => {
+        if (taskChecklists.length === 0) return 0
+        return Math.round((taskChecklists.filter(c => c.completed).length / taskChecklists.length) * 100)
     }
 
     if (loading) {
@@ -207,25 +300,17 @@ export default function ProjectDetailPage() {
                                 <p className="text-sm text-midnight-500">{project?.description || 'Kanban Board'}</p>
                             </div>
                         </div>
-
-                        {/* Team Members */}
                         {members.length > 0 && (
                             <div className="flex items-center gap-3">
                                 <span className="text-[11px] font-bold text-midnight-600 uppercase tracking-wider">Team</span>
                                 <div className="flex items-center -space-x-2">
                                     {members.slice(0, 5).map((m) => (
-                                        <div
-                                            key={m.id}
-                                            className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border-2 border-[#0a0a1a] flex items-center justify-center text-violet-400 text-xs font-bold cursor-default"
-                                            title={`${m.users?.name} (${m.role || 'MEMBER'})`}
-                                        >
+                                        <div key={m.id} className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border-2 border-[#0a0a1a] flex items-center justify-center text-violet-400 text-xs font-bold cursor-default" title={`${m.users?.name} (${m.role})`}>
                                             {m.users?.name?.charAt(0)?.toUpperCase()}
                                         </div>
                                     ))}
                                     {members.length > 5 && (
-                                        <div className="w-8 h-8 rounded-lg bg-white/[0.06] border-2 border-[#0a0a1a] flex items-center justify-center text-midnight-500 text-xs font-bold">
-                                            +{members.length - 5}
-                                        </div>
+                                        <div className="w-8 h-8 rounded-lg bg-white/[0.06] border-2 border-[#0a0a1a] flex items-center justify-center text-midnight-500 text-xs font-bold">+{members.length - 5}</div>
                                     )}
                                 </div>
                             </div>
@@ -239,107 +324,74 @@ export default function ProjectDetailPage() {
                         {COLUMNS.map((column) => {
                             const columnTasks = getColumnTasks(column.key)
                             const isDragOver = dragOverColumn === column.key
-
                             return (
-                                <div
-                                    key={column.key}
-                                    className={`w-[340px] flex flex-col rounded-xl border transition-colors ${isDragOver
-                                        ? `border-2 ${column.color} ${column.bgHover}`
-                                        : 'border-white/[0.04] bg-white/[0.01]'
-                                        }`}
-                                    onDragOver={(e) => handleDragOver(e, column.key)}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, column.key)}
+                                <div key={column.key}
+                                    className={`w-[340px] flex flex-col rounded-xl border transition-colors ${isDragOver ? `border-2 ${column.color} ${column.bgHover}` : 'border-white/[0.04] bg-white/[0.01]'}`}
+                                    onDragOver={(e) => handleDragOver(e, column.key)} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, column.key)}
                                 >
                                     {/* Column Header */}
                                     <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <div className={`w-2 h-2 rounded-full ${column.dotColor}`} />
                                             <span className="text-sm font-bold text-white">{column.label}</span>
-                                            <span className="text-xs text-midnight-600 bg-white/[0.04] px-2 py-0.5 rounded-md font-medium">
-                                                {columnTasks.length}
-                                            </span>
+                                            <span className="text-xs text-midnight-600 bg-white/[0.04] px-2 py-0.5 rounded-md font-medium">{columnTasks.length}</span>
                                         </div>
-                                        <button
-                                            onClick={() => { setAddingTo(column.key); setNewTaskTitle('') }}
-                                            className="p-1 text-midnight-600 hover:text-violet-400 rounded-md hover:bg-white/[0.04] transition-all"
-                                        >
+                                        <button onClick={() => { setAddingTo(column.key); setNewTaskTitle('') }} className="p-1 text-midnight-600 hover:text-violet-400 rounded-md hover:bg-white/[0.04] transition-all">
                                             <Plus className="w-4 h-4" />
                                         </button>
                                     </div>
 
                                     {/* Cards */}
                                     <div className="flex-1 p-2 space-y-2 overflow-y-auto custom-scrollbar">
-                                        {/* Add card inline */}
                                         {addingTo === column.key && (
                                             <div className="bg-white/[0.04] border border-violet-500/20 rounded-lg p-3">
-                                                <input
-                                                    type="text"
-                                                    value={newTaskTitle}
-                                                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') handleAddTask(column.key)
-                                                        if (e.key === 'Escape') setAddingTo(null)
-                                                    }}
-                                                    className="w-full bg-transparent text-white text-sm placeholder-midnight-600 focus:outline-none"
-                                                    placeholder="Task title..."
-                                                    autoFocus
-                                                />
+                                                <input type="text" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddTask(column.key); if (e.key === 'Escape') setAddingTo(null) }}
+                                                    className="w-full bg-transparent text-white text-sm placeholder-midnight-600 focus:outline-none" placeholder="Task title..." autoFocus />
                                                 <div className="flex items-center gap-2 mt-2">
-                                                    <button
-                                                        onClick={() => handleAddTask(column.key)}
-                                                        className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-md transition-colors"
-                                                    >
-                                                        Add
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setAddingTo(null)}
-                                                        className="p-1 text-midnight-500 hover:text-white"
-                                                    >
-                                                        <X className="w-3.5 h-3.5" />
-                                                    </button>
+                                                    <button onClick={() => handleAddTask(column.key)} className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-md transition-colors">Add</button>
+                                                    <button onClick={() => setAddingTo(null)} className="p-1 text-midnight-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
                                                 </div>
                                             </div>
                                         )}
 
                                         {columnTasks.map((task) => (
-                                            <div
-                                                key={task.id}
-                                                draggable
-                                                onDragStart={(e) => handleDragStart(e, task)}
-                                                onDragEnd={handleDragEnd}
+                                            <div key={task.id} draggable onDragStart={(e) => handleDragStart(e, task)} onDragEnd={handleDragEnd}
+                                                onClick={() => openTaskDetail(task)}
                                                 className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-white/[0.12] transition-all group"
                                             >
                                                 <div className="flex items-start gap-2">
                                                     <GripVertical className="w-4 h-4 text-midnight-700 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm text-white font-medium">{task.title}</p>
-                                                        {task.description && (
-                                                            <p className="text-xs text-midnight-500 mt-1 line-clamp-2">{task.description}</p>
-                                                        )}
+                                                        {task.description && <p className="text-xs text-midnight-500 mt-1 line-clamp-1">{task.description}</p>}
                                                     </div>
-                                                    <button
-                                                        onClick={() => handleDeleteTask(task.id)}
-                                                        className="p-1 text-midnight-700 hover:text-red-400 rounded opacity-0 group-hover:opacity-100 transition-all"
-                                                    >
+                                                    <button onClick={(e) => handleDeleteTask(task.id, e)} className="p-1 text-midnight-700 hover:text-red-400 rounded opacity-0 group-hover:opacity-100 transition-all">
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
                                                 </div>
-                                                {task.assigned_user && (
-                                                    <div className="flex items-center gap-1.5 mt-2 ml-6">
-                                                        <div className="w-4 h-4 rounded bg-violet-500/20 flex items-center justify-center">
-                                                            <span className="text-[8px] font-bold text-violet-400">{task.assigned_user.name.charAt(0)}</span>
+                                                {/* Meta row */}
+                                                <div className="flex items-center gap-2 mt-2 ml-6 flex-wrap">
+                                                    {task.due_date && (
+                                                        <span className={`flex items-center gap-1 text-[11px] ${getDueDateColor(task.due_date)}`}>
+                                                            <Calendar className="w-3 h-3" />
+                                                            {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                        </span>
+                                                    )}
+                                                    {task.assigned_user && (
+                                                        <div className="flex items-center gap-1">
+                                                            <div className="w-4 h-4 rounded bg-violet-500/20 flex items-center justify-center">
+                                                                <span className="text-[8px] font-bold text-violet-400">{task.assigned_user.name.charAt(0)}</span>
+                                                            </div>
+                                                            <span className="text-[11px] text-midnight-500">{task.assigned_user.name}</span>
                                                         </div>
-                                                        <span className="text-[11px] text-midnight-500">{task.assigned_user.name}</span>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
 
                                         {columnTasks.length === 0 && addingTo !== column.key && (
-                                            <div className="text-center py-8">
-                                                <p className="text-xs text-midnight-700">No tasks</p>
-                                            </div>
+                                            <div className="text-center py-8"><p className="text-xs text-midnight-700">No tasks</p></div>
                                         )}
                                     </div>
                                 </div>
@@ -348,6 +400,128 @@ export default function ProjectDetailPage() {
                     </div>
                 </div>
             </main>
+
+            {/* Task Detail Modal */}
+            {selectedTask && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setSelectedTask(null)}>
+                    <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl w-full max-w-xl shadow-2xl max-h-[85vh] overflow-y-auto custom-scrollbar" onClick={(e) => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="px-6 pt-6 pb-4 border-b border-white/[0.04] flex items-start justify-between">
+                            <div className="flex-1 min-w-0 mr-4">
+                                <h2 className="text-lg font-bold text-white">{selectedTask.title}</h2>
+                                <p className="text-xs text-midnight-600 mt-1">
+                                    {COLUMNS.find(c => c.key === selectedTask.status)?.label}
+                                </p>
+                            </div>
+                            <button onClick={() => setSelectedTask(null)} className="p-1.5 text-midnight-500 hover:text-white rounded-lg hover:bg-white/[0.04]">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            {/* Description */}
+                            <div>
+                                <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2">Description</h4>
+                                {editingDescription ? (
+                                    <div>
+                                        <textarea value={tempDescription} onChange={(e) => setTempDescription(e.target.value)}
+                                            className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-700 focus:outline-none focus:border-violet-500/40 h-20 resize-none" placeholder="Add description..." autoFocus />
+                                        <div className="flex gap-2 mt-2">
+                                            <button onClick={handleSaveDescription} className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-md">Save</button>
+                                            <button onClick={() => setEditingDescription(false)} className="px-3 py-1 text-midnight-500 hover:text-white text-xs">Cancel</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div onClick={() => { setEditingDescription(true); setTempDescription(selectedTask.description || '') }}
+                                        className="px-3 py-2 bg-white/[0.03] border border-white/[0.04] rounded-lg text-sm text-midnight-400 cursor-pointer hover:border-white/[0.08] min-h-[40px] transition-colors">
+                                        {selectedTask.description || 'Click to add description...'}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Due Date & Assignee row */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <Calendar className="w-3.5 h-3.5" /> Due Date
+                                    </h4>
+                                    <input type="date" value={selectedTask.due_date?.split('T')[0] || ''}
+                                        onChange={(e) => handleSetDueDate(e.target.value)}
+                                        className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]" />
+                                </div>
+                                <div>
+                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <UserPlus className="w-3.5 h-3.5" /> Assignee
+                                    </h4>
+                                    <select value={selectedTask.assigned_to || ''}
+                                        onChange={(e) => handleAssignMember(e.target.value)}
+                                        className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]">
+                                        <option value="" className="bg-[#0f0f23]">Unassigned</option>
+                                        {members.map((m) => (
+                                            <option key={m.user_id} value={m.user_id} className="bg-[#0f0f23]">{m.users?.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Checklists */}
+                            <div>
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider flex items-center gap-1.5">
+                                        <CheckSquare className="w-3.5 h-3.5" /> Checklist
+                                        {taskChecklists.length > 0 && (
+                                            <span className="text-midnight-600 ml-1">
+                                                ({taskChecklists.filter(c => c.completed).length}/{taskChecklists.length})
+                                            </span>
+                                        )}
+                                    </h4>
+                                    {taskChecklists.length > 0 && (
+                                        <span className="text-xs text-midnight-500 font-medium">{checklistProgress()}%</span>
+                                    )}
+                                </div>
+
+                                {/* Progress bar */}
+                                {taskChecklists.length > 0 && (
+                                    <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden mb-3">
+                                        <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-300" style={{ width: `${checklistProgress()}%` }} />
+                                    </div>
+                                )}
+
+                                {/* Checklist items */}
+                                <div className="space-y-1.5">
+                                    {taskChecklists.map((item) => (
+                                        <div key={item.id} className="flex items-center gap-2 group px-2 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors">
+                                            <button onClick={() => handleToggleChecklist(item)} className="shrink-0">
+                                                {item.completed
+                                                    ? <CheckSquare className="w-4 h-4 text-violet-400" />
+                                                    : <Square className="w-4 h-4 text-midnight-600 hover:text-violet-400 transition-colors" />
+                                                }
+                                            </button>
+                                            <span className={`text-sm flex-1 ${item.completed ? 'line-through text-midnight-600' : 'text-white'}`}>
+                                                {item.title}
+                                            </span>
+                                            <button onClick={() => handleDeleteChecklist(item.id)} className="p-0.5 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Add checklist item */}
+                                <div className="flex gap-2 mt-3">
+                                    <input type="text" value={newChecklistTitle} onChange={(e) => setNewChecklistTitle(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddChecklist() }}
+                                        className="flex-1 px-3 py-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-700 focus:outline-none focus:border-violet-500/40"
+                                        placeholder="Add item..." />
+                                    <button onClick={handleAddChecklist} className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
