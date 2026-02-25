@@ -56,7 +56,6 @@ export default function RegisterPage() {
 
       setSuccess(data.message)
       
-      // Redirect to login after 2 seconds
       setTimeout(() => {
         router.push('/login')
       }, 2000)
@@ -68,93 +67,115 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">สมัครสมาชิก</h1>
-        
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4 text-sm">
-            {error}
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo / Brand */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-2xl mb-4 backdrop-blur-sm">
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
           </div>
-        )}
+          <h1 className="text-3xl font-bold text-white">AOT Manager</h1>
+          <p className="text-white/70 mt-2">สมัครสมาชิกใหม่</p>
+        </div>
 
-        {success && (
-          <div className="bg-green-50 text-green-600 p-3 rounded-md mb-4 text-sm">
-            {success}
-          </div>
-        )}
+        {/* Register Form */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">สร้างบัญชี</h2>
+          
+          {error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              ชื่อ-นามสกุล
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          {success && (
+            <div className="bg-green-50 text-green-600 p-4 rounded-xl mb-6 text-sm">
+              {success}
+            </div>
+          )}
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              อีเมล
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ชื่อ-นามสกุล
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="ชื่อของคุณ"
+                required
+              />
+            </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              รหัสผ่าน
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                อีเมล
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="your@email.com"
+                required
+              />
+            </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              ยืนยันรหัสผ่าน
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                รหัสผ่าน
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'กำลังสมัคร...' : 'สมัครสมาชิก'}
-          </button>
-        </form>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ยืนยันรหัสผ่าน
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
-        <p className="mt-4 text-center text-sm text-gray-600">
-          มีบัญชีอยู่แล้ว?{' '}
-          <a href="/login" className="text-blue-600 hover:underline">
-            เข้าสู่ระบบ
-          </a>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 px-6 rounded-xl font-medium hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'กำลังสมัคร...' : 'สมัครสมาชิก'}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-gray-600">
+            มีบัญชีอยู่แล้ว?{' '}
+            <a href="/login" className="text-purple-600 font-medium hover:text-purple-700">
+              เข้าสู่ระบบ
+            </a>
+          </p>
+        </div>
+
+        <p className="text-center text-white/50 text-sm mt-8">
+          © 2026 Art of Tech. All rights reserved.
         </p>
       </div>
     </div>
