@@ -35,6 +35,7 @@ interface Project {
 interface UserProject {
     id: string
     user_id: string
+    role: string
     users: { id: string; name: string; email: string }
 }
 
@@ -196,14 +197,39 @@ export default function ProjectDetailPage() {
             <main className="flex-1 min-w-0 flex flex-col">
                 {/* Top bar */}
                 <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-8 py-4">
-                    <div className="flex items-center gap-4">
-                        <Link href="/dashboard" className="p-1.5 text-midnight-500 hover:text-white rounded-lg hover:bg-white/[0.04] transition-all">
-                            <ArrowLeft className="w-5 h-5" />
-                        </Link>
-                        <div>
-                            <h1 className="text-xl font-bold text-white">{project?.name || 'Project'}</h1>
-                            <p className="text-sm text-midnight-500">{project?.description || 'Kanban Board'}</p>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Link href="/dashboard" className="p-1.5 text-midnight-500 hover:text-white rounded-lg hover:bg-white/[0.04] transition-all">
+                                <ArrowLeft className="w-5 h-5" />
+                            </Link>
+                            <div>
+                                <h1 className="text-xl font-bold text-white">{project?.name || 'Project'}</h1>
+                                <p className="text-sm text-midnight-500">{project?.description || 'Kanban Board'}</p>
+                            </div>
                         </div>
+
+                        {/* Team Members */}
+                        {members.length > 0 && (
+                            <div className="flex items-center gap-3">
+                                <span className="text-[11px] font-bold text-midnight-600 uppercase tracking-wider">Team</span>
+                                <div className="flex items-center -space-x-2">
+                                    {members.slice(0, 5).map((m) => (
+                                        <div
+                                            key={m.id}
+                                            className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border-2 border-[#0a0a1a] flex items-center justify-center text-violet-400 text-xs font-bold cursor-default"
+                                            title={`${m.users?.name} (${m.role || 'MEMBER'})`}
+                                        >
+                                            {m.users?.name?.charAt(0)?.toUpperCase()}
+                                        </div>
+                                    ))}
+                                    {members.length > 5 && (
+                                        <div className="w-8 h-8 rounded-lg bg-white/[0.06] border-2 border-[#0a0a1a] flex items-center justify-center text-midnight-500 text-xs font-bold">
+                                            +{members.length - 5}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -218,8 +244,8 @@ export default function ProjectDetailPage() {
                                 <div
                                     key={column.key}
                                     className={`w-[340px] flex flex-col rounded-xl border transition-colors ${isDragOver
-                                            ? `border-2 ${column.color} ${column.bgHover}`
-                                            : 'border-white/[0.04] bg-white/[0.01]'
+                                        ? `border-2 ${column.color} ${column.bgHover}`
+                                        : 'border-white/[0.04] bg-white/[0.01]'
                                         }`}
                                     onDragOver={(e) => handleDragOver(e, column.key)}
                                     onDragLeave={handleDragLeave}
