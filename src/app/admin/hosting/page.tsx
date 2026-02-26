@@ -106,6 +106,8 @@ export default function HostingPage() {
     }
 
     const handleDelete = async (type: 'providers' | 'hosts' | 'domains', id: string) => {
+        const labels = { providers: 'provider (รวม hosts และ domains ทั้งหมด)', hosts: 'host (รวม domains ทั้งหมด)', domains: 'domain' }
+        if (!confirm(`ต้องการลบ ${labels[type]} นี้จริงหรือไม่?`)) return
         const urlMap = { providers: '/api/admin/hosting', hosts: '/api/admin/hosting/hosts', domains: '/api/admin/hosting/domains' }
         await fetch(`${urlMap[type]}?id=${id}`, { method: 'DELETE' })
         fetchData()

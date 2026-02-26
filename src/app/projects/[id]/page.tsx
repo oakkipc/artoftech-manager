@@ -155,6 +155,7 @@ export default function ProjectDetailPage() {
 
     const handleDeleteTask = async (taskId: string, e?: React.MouseEvent) => {
         e?.stopPropagation()
+        if (!confirm('ต้องการลบ task นี้จริงหรือไม่?')) return
         try {
             await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' })
             setTasks(prev => prev.filter(t => t.id !== taskId))
@@ -237,6 +238,7 @@ export default function ProjectDetailPage() {
     }
 
     const handleDeleteChecklist = async (id: string) => {
+        if (!confirm('ต้องการลบ checklist item นี้จริงหรือไม่?')) return
         setTaskChecklists(prev => prev.filter(c => c.id !== id))
         try {
             await fetch(`/api/checklists?id=${id}`, { method: 'DELETE' })
@@ -294,6 +296,7 @@ export default function ProjectDetailPage() {
     }
 
     const handleDeleteLink = async (id: string) => {
+        if (!confirm('ต้องการลบลิ้งค์นี้จริงหรือไม่?')) return
         setProjectLinks(prev => prev.filter(l => l.id !== id))
         try { await fetch(`/api/projects/links?id=${id}`, { method: 'DELETE' }) } catch { }
     }

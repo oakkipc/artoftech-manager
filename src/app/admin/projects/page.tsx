@@ -148,6 +148,7 @@ export default function AdminProjectsPage() {
   }
 
   const handleRemoveUser = async (userProjectId: string) => {
+    if (!confirm('ต้องการลบสมาชิกออกจากโปรเจคนี้จริงหรือไม่?')) return
     try {
       const res = await fetch(`/api/admin/projects/users?id=${userProjectId}`, { method: 'DELETE' })
       if (res.ok && selectedProject) fetchProjectUsers(selectedProject.id)
