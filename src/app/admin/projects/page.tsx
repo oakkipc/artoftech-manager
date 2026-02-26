@@ -52,6 +52,7 @@ export default function AdminProjectsPage() {
   const [newProject, setNewProject] = useState({ name: '', description: '' })
   const [assignUser, setAssignUser] = useState({ userId: '', role: 'VIEWER' })
   const [searchQuery, setSearchQuery] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
@@ -96,6 +97,8 @@ export default function AdminProjectsPage() {
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting) return
+    setSubmitting(true)
     try {
       const res = await fetch('/api/admin/projects', {
         method: 'POST',
@@ -108,6 +111,7 @@ export default function AdminProjectsPage() {
         fetchData()
       }
     } catch (err) { console.error(err) }
+    finally { setSubmitting(false) }
   }
 
   const handleTogglePin = async (project: Project) => {
@@ -127,6 +131,8 @@ export default function AdminProjectsPage() {
 
   const handleAssignUser = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting) return
+    setSubmitting(true)
     try {
       const res = await fetch('/api/admin/projects/users', {
         method: 'POST',
@@ -138,6 +144,7 @@ export default function AdminProjectsPage() {
         if (selectedProject) fetchProjectUsers(selectedProject.id)
       }
     } catch (err) { console.error(err) }
+    finally { setSubmitting(false) }
   }
 
   const handleRemoveUser = async (userProjectId: string) => {
@@ -229,8 +236,8 @@ export default function AdminProjectsPage() {
                     <button
                       onClick={() => handleTogglePin(project)}
                       className={`p-1.5 rounded-md transition-all ${project.pinned
-                          ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
-                          : 'text-midnight-700 hover:text-amber-400 hover:bg-amber-500/10 opacity-0 group-hover:opacity-100'
+                        ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                        : 'text-midnight-700 hover:text-amber-400 hover:bg-amber-500/10 opacity-0 group-hover:opacity-100'
                         }`}
                       title={project.pinned ? 'Unpin' : 'Pin to top'}
                     >
@@ -306,7 +313,7 @@ export default function AdminProjectsPage() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-midnight-400 border border-white/[0.08] rounded-lg hover:bg-white/[0.04]">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors">Create</button>
+                <button type="submit" disabled={submitting} className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{submitting ? 'Creating...' : 'Create'}</button>
               </div>
             </form>
           </div>

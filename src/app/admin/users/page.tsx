@@ -33,6 +33,7 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [selectedRole, setSelectedRole] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
@@ -61,7 +62,8 @@ export default function AdminUsersPage() {
   }
 
   const handleUpdateRole = async () => {
-    if (!selectedUser || !selectedRole) return
+    if (!selectedUser || !selectedRole || submitting) return
+    setSubmitting(true)
     try {
       await fetch('/api/admin/users', {
         method: 'PUT',
@@ -72,7 +74,7 @@ export default function AdminUsersPage() {
       fetchUsers()
     } catch (err) {
       console.error(err)
-    }
+    } finally { setSubmitting(false) }
   }
 
   const openRoleModal = (user: User) => {
@@ -221,8 +223,8 @@ export default function AdminUsersPage() {
                   key={role}
                   onClick={() => setSelectedRole(role)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all border ${selectedRole === role
-                      ? 'bg-violet-600/10 text-violet-400 border-violet-500/30'
-                      : 'text-midnight-400 hover:bg-white/[0.04] border-transparent hover:border-white/[0.06]'
+                    ? 'bg-violet-600/10 text-violet-400 border-violet-500/30'
+                    : 'text-midnight-400 hover:bg-white/[0.04] border-transparent hover:border-white/[0.06]'
                     }`}
                 >
                   <span>{role}</span>
@@ -240,9 +242,10 @@ export default function AdminUsersPage() {
               </button>
               <button
                 onClick={handleUpdateRole}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors"
+                disabled={submitting}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Update
+                {submitting ? 'Updating...' : 'Update'}
               </button>
             </div>
           </div>
