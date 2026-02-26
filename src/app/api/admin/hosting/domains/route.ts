@@ -33,6 +33,27 @@ export async function POST(request: Request) {
     }
 }
 
+// PATCH: Move domain to a different host
+export async function PATCH(request: Request) {
+    try {
+        const { domainId, newHostId } = await request.json()
+        if (!domainId || !newHostId) return NextResponse.json({ error: 'domainId and newHostId required' }, { status: 400 })
+
+        const supabase = getAdminClient()
+        const { data, error } = await supabase
+            .from('domains')
+            .update({ host_id: newHostId })
+            .eq('id', domainId)
+            .select()
+            .single()
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ domain: data })
+    } catch (error) {
+        return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    }
+}
+
 // DELETE: Delete domain
 export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url)

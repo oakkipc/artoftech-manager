@@ -15,7 +15,8 @@ import {
     ChevronRight,
     Shield,
     Calendar,
-    ExternalLink
+    ExternalLink,
+    GripVertical
 } from 'lucide-react'
 
 interface Domain {
@@ -44,6 +45,10 @@ export default function HostingPage() {
     const [modalParentId, setModalParentId] = useState('')
     const [formData, setFormData] = useState<Record<string, string>>({})
     const [submitting, setSubmitting] = useState(false)
+
+    // Drag & drop
+    const [draggedDomain, setDraggedDomain] = useState<Domain | null>(null)
+    const [dragOverHostId, setDragOverHostId] = useState<string | null>(null)
 
     useEffect(() => {
         const userStr = localStorage.getItem('user')
@@ -118,6 +123,47 @@ export default function HostingPage() {
 
     const toggleProvider = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }))
     const toggleHost = (id: string) => setExpandedHosts(prev => ({ ...prev, [id]: !prev[id] }))
+
+    // Drag & drop handlers
+    const handleDomainDragStart = (e: React.DragEvent, domain: Domain) => {
+        setDraggedDomain(domain)
+        e.dataTransfer.effectAllowed = 'move'
+    }
+    const handleHostDragOver = (e: React.DragEvent, hostId: string) => {
+        if (!draggedDomain) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        setDragOverHostId(hostId)
+    }
+    const handleHostDragLeave = () => setDragOverHostId(null)
+    const handleHostDrop = async (e: React.DragEvent, targetHostId: string) => {
+        e.preventDefault()
+        setDragOverHostId(null)
+        if (!draggedDomain) return
+
+        // Optimistic: move domain in local state
+        setProviders(prev => prev.map(p => ({
+            ...p,
+            hosts: p.hosts.map(h => {
+                // Remove from old host
+                const filtered = h.domains.filter(d => d.id !== draggedDomain.id)
+                // Add to new host
+                if (h.id === targetHostId) return { ...h, domains: [...filtered, draggedDomain] }
+                return { ...h, domains: filtered }
+            })
+        })))
+        // Expand the target host
+        setExpandedHosts(prev => ({ ...prev, [targetHostId]: true }))
+        setDraggedDomain(null)
+
+        try {
+            await fetch('/api/admin/hosting/domains', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domainId: draggedDomain.id, newHostId: targetHostId })
+            })
+        } catch { fetchData() }
+    }
 
     if (loading) {
         return (<div className="min-h-screen bg-midnight-950 flex items-center justify-center"><div className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" /></div>)
@@ -308,7 +354,13 @@ export default function HostingPage() {
                                         {provider.hosts.map((host) => (
                                             <div key={host.id}>
                                                 {/* Host Row */}
-                                                <div className="px-5 py-3 ml-6 flex items-center justify-between border-b border-white/[0.03] hover:bg-white/[0.02] cursor-pointer" onClick={() => toggleHost(host.id)}>
+                                                <div className={`px-5 py-3 ml-6 flex items-center justify-between border-b border-white/[0.03] hover:bg-white/[0.02] cursor-pointer transition-all ${dragOverHostId === host.id ? 'bg-blue-500/[0.08] border-blue-500/30 ring-1 ring-blue-500/20' : ''
+                                                    }`}
+                                                    onClick={() => toggleHost(host.id)}
+                                                    onDragOver={(e) => handleHostDragOver(e, host.id)}
+                                                    onDragLeave={handleHostDragLeave}
+                                                    onDrop={(e) => handleHostDrop(e, host.id)}
+                                                >
                                                     <div className="flex items-center gap-3">
                                                         {expandedHosts[host.id] ? <ChevronDown className="w-3.5 h-3.5 text-midnight-600" /> : <ChevronRight className="w-3.5 h-3.5 text-midnight-600" />}
                                                         <Server className="w-4 h-4 text-cyan-400" />
@@ -341,8 +393,14 @@ export default function HostingPage() {
                                                 {expandedHosts[host.id] && host.domains.length > 0 && (
                                                     <div className="ml-16 py-1">
                                                         {host.domains.map((domain) => (
-                                                            <div key={domain.id} className="px-4 py-2.5 flex items-center justify-between hover:bg-white/[0.02] rounded-lg mx-2 group">
+                                                            <div key={domain.id}
+                                                                draggable
+                                                                onDragStart={(e) => handleDomainDragStart(e, domain)}
+                                                                onDragEnd={() => setDraggedDomain(null)}
+                                                                className={`px-4 py-2.5 flex items-center justify-between hover:bg-white/[0.02] rounded-lg mx-2 group cursor-grab active:cursor-grabbing ${draggedDomain?.id === domain.id ? 'opacity-40' : ''
+                                                                    }`}>
                                                                 <div className="flex items-center gap-3">
+                                                                    <GripVertical className="w-3.5 h-3.5 text-midnight-700 group-hover:text-midnight-500 shrink-0" />
                                                                     <Globe className="w-4 h-4 text-blue-400" />
                                                                     <div>
                                                                         <p className="text-sm text-white font-medium">{domain.name}</p>
