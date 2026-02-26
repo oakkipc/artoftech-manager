@@ -7,17 +7,38 @@ const getAdminClient = () => {
     return createClient(supabaseUrl, serviceRoleKey)
 }
 
-// GET: Fetch checklists for a task
+// GET: Fetch checklists for a task or entire project
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const taskId = searchParams.get('taskId')
+    const projectId = searchParams.get('projectId')
 
-    if (!taskId) {
-        return NextResponse.json({ error: 'taskId is required' }, { status: 400 })
+    if (!taskId && !projectId) {
+        return NextResponse.json({ error: 'taskId or projectId is required' }, { status: 400 })
     }
 
     try {
         const supabase = getAdminClient()
+
+        if (projectId) {
+            // Fetch all checklists for all tasks in this project
+            const { data: tasks } = await supabase
+                .from('tasks')
+                .select('id')
+                .eq('project_id', projectId)
+            const taskIds = (tasks || []).map(t => t.id)
+            if (taskIds.length === 0) return NextResponse.json({ checklists: [] })
+
+            const { data, error } = await supabase
+                .from('checklists')
+                .select('*')
+                .in('task_id', taskIds)
+                .order('position', { ascending: true })
+
+            if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+            return NextResponse.json({ checklists: data })
+        }
+
         const { data, error } = await supabase
             .from('checklists')
             .select('*')

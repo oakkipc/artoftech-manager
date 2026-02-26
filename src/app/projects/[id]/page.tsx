@@ -27,6 +27,7 @@ import {
 
 interface ChecklistItem {
     id: string
+    task_id: string
     title: string
     completed: boolean
     position: number
@@ -105,6 +106,9 @@ export default function ProjectDetailPage() {
     const [newCatName, setNewCatName] = useState('')
     const [newCatColor, setNewCatColor] = useState('#8b5cf6')
 
+    // All checklists for donut chart
+    const [allChecklists, setAllChecklists] = useState<ChecklistItem[]>([])
+
     // Drag state
     const [draggedTask, setDraggedTask] = useState<Task | null>(null)
     const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
@@ -124,24 +128,27 @@ export default function ProjectDetailPage() {
 
     const fetchAll = async () => {
         try {
-            const [projectRes, tasksRes, membersRes, linksRes, catsRes] = await Promise.all([
+            const [projectRes, tasksRes, membersRes, linksRes, catsRes, allCheckRes] = await Promise.all([
                 fetch(`/api/admin/projects?id=${projectId}`),
                 fetch(`/api/tasks?projectId=${projectId}`),
                 fetch(`/api/admin/projects/users?projectId=${projectId}`),
                 fetch(`/api/projects/links?projectId=${projectId}`),
-                fetch(`/api/projects/categories?projectId=${projectId}`)
+                fetch(`/api/projects/categories?projectId=${projectId}`),
+                fetch(`/api/checklists?projectId=${projectId}`)
             ])
             const projectData = await projectRes.json()
             const tasksData = await tasksRes.json()
             const membersData = await membersRes.json()
             const linksData = await linksRes.json()
             const catsData = await catsRes.json()
+            const allCheckData = await allCheckRes.json()
 
             if (projectData.project) setProject(projectData.project)
             if (tasksData.tasks) setTasks(tasksData.tasks)
             if (membersData.userProjects) setMembers(membersData.userProjects)
             if (linksData.links) setProjectLinks(linksData.links)
             if (catsData.categories) setCategories(catsData.categories)
+            if (allCheckData.checklists) setAllChecklists(allCheckData.checklists)
         } catch (err) {
             console.error(err)
         } finally {
@@ -467,18 +474,29 @@ export default function ProjectDetailPage() {
 
                     {/* Category Pie Chart */}
                     {tasks.length > 0 && categories.length > 0 && (() => {
-                        const catData = categories.map(cat => ({
-                            name: cat.name,
-                            color: cat.color,
-                            count: tasks.filter(t => t.category_id === cat.id).length
-                        })).filter(d => d.count > 0)
-                        const uncategorized = tasks.filter(t => !t.category_id).length
-                        if (uncategorized > 0) catData.push({ name: 'Uncategorized', color: '#4b5563', count: uncategorized })
+                        // Build map: taskId → categoryId
+                        const taskCatMap: Record<string, string | null> = {}
+                        tasks.forEach(t => { taskCatMap[t.id] = t.category_id })
 
-                        const total = catData.reduce((s, d) => s + d.count, 0)
-                        if (total === 0) return null
+                        const catData = categories.map(cat => {
+                            const catTaskIds = tasks.filter(t => t.category_id === cat.id).map(t => t.id)
+                            const catChecklists = allChecklists.filter(c => catTaskIds.includes(c.task_id))
+                            const remaining = catChecklists.filter(c => !c.completed).length
+                            const total = catChecklists.length
+                            return { name: cat.name, color: cat.color, remaining, total, taskCount: catTaskIds.length }
+                        }).filter(d => d.taskCount > 0)
 
-                        // Build SVG donut segments
+                        const uncatTaskIds = tasks.filter(t => !t.category_id).map(t => t.id)
+                        if (uncatTaskIds.length > 0) {
+                            const uncatChecklists = allChecklists.filter(c => uncatTaskIds.includes(c.task_id))
+                            catData.push({ name: 'Uncategorized', color: '#4b5563', remaining: uncatChecklists.filter(c => !c.completed).length, total: uncatChecklists.length, taskCount: uncatTaskIds.length })
+                        }
+
+                        const totalRemaining = catData.reduce((s, d) => s + d.remaining, 0)
+                        const totalAll = catData.reduce((s, d) => s + d.total, 0)
+                        if (totalAll === 0) return null
+
+                        // Build SVG donut segments (by remaining count)
                         const radius = 50
                         const cx = 60, cy = 60
                         const circumference = 2 * Math.PI * radius
@@ -488,8 +506,8 @@ export default function ProjectDetailPage() {
                             <div className="mb-5 bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex items-center gap-6">
                                 <div className="shrink-0">
                                     <svg width="120" height="120" viewBox="0 0 120 120">
-                                        {catData.map((d, i) => {
-                                            const pct = d.count / total
+                                        {catData.filter(d => d.remaining > 0).map((d, i) => {
+                                            const pct = d.remaining / totalRemaining
                                             const dashLen = pct * circumference
                                             const dashOffset = -offset
                                             offset += dashLen
@@ -502,19 +520,24 @@ export default function ProjectDetailPage() {
                                                     className="transition-all duration-500" />
                                             )
                                         })}
-                                        <text x={cx} y={cy - 4} textAnchor="middle" className="fill-white text-lg font-bold">{total}</text>
-                                        <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[9px]">tasks</text>
+                                        {totalRemaining === 0 && (
+                                            <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#10b981" strokeWidth="18" opacity="0.3" />
+                                        )}
+                                        <text x={cx} y={cy - 4} textAnchor="middle" className="fill-white text-lg font-bold">{totalRemaining}</text>
+                                        <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[9px]">remaining</text>
                                     </svg>
                                 </div>
-                                <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2">
-                                    {catData.map((d, i) => (
-                                        <div key={i} className="flex items-center gap-2">
-                                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                                            <span className="text-xs text-white font-medium truncate">{d.name}</span>
-                                            <span className="text-xs text-midnight-500 ml-auto">{d.count}</span>
-                                            <span className="text-[10px] text-midnight-600">{Math.round((d.count / total) * 100)}%</span>
-                                        </div>
-                                    ))}
+                                <div className="flex-1">
+                                    <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-2">Checklist by Category</p>
+                                    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                                        {catData.map((d, i) => (
+                                            <div key={i} className="flex items-center gap-2">
+                                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                                                <span className="text-xs text-white font-medium truncate">{d.name}</span>
+                                                <span className="text-xs text-midnight-500 ml-auto">{d.remaining}/{d.total}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )
