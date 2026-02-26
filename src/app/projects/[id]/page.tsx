@@ -108,18 +108,17 @@ export default function ProjectDetailPage() {
     const fetchAll = async () => {
         try {
             const [projectRes, tasksRes, membersRes, linksRes] = await Promise.all([
-                fetch('/api/admin/projects'),
+                fetch(`/api/admin/projects?id=${projectId}`),
                 fetch(`/api/tasks?projectId=${projectId}`),
                 fetch(`/api/admin/projects/users?projectId=${projectId}`),
                 fetch(`/api/projects/links?projectId=${projectId}`)
             ])
-            const projectsData = await projectRes.json()
+            const projectData = await projectRes.json()
             const tasksData = await tasksRes.json()
             const membersData = await membersRes.json()
             const linksData = await linksRes.json()
 
-            const proj = projectsData.projects?.find((p: any) => p.id === projectId)
-            if (proj) setProject(proj)
+            if (projectData.project) setProject(projectData.project)
             if (tasksData.tasks) setTasks(tasksData.tasks)
             if (membersData.userProjects) setMembers(membersData.userProjects)
             if (linksData.links) setProjectLinks(linksData.links)

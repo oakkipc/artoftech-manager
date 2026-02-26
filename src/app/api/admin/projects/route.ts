@@ -7,19 +7,29 @@ const getAdminClient = () => {
   return createClient(supabaseUrl, serviceRoleKey)
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
+
   try {
     const supabase = getAdminClient()
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('projects')
       .select('*')
       .order('created_at', { ascending: false })
+
+    if (id) query = query.eq('id', id)
+
+    const { data, error } = await query
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    if (id) {
+      return NextResponse.json({ project: data?.[0] || null })
+    }
     return NextResponse.json({ projects: data })
   } catch (error) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
