@@ -40,10 +40,10 @@ export default function HostingPage() {
     const [expanded, setExpanded] = useState<Record<string, boolean>>({})
     const [expandedHosts, setExpandedHosts] = useState<Record<string, boolean>>({})
 
-    // Modal state
     const [showModal, setShowModal] = useState<'provider' | 'host' | 'domain' | null>(null)
     const [modalParentId, setModalParentId] = useState('')
     const [formData, setFormData] = useState<Record<string, string>>({})
+    const [submitting, setSubmitting] = useState(false)
 
     useEffect(() => {
         const userStr = localStorage.getItem('user')
@@ -65,30 +65,39 @@ export default function HostingPage() {
     }
 
     const handleAddProvider = async () => {
-        if (!formData.name?.trim()) return
-        await fetch('/api/admin/hosting', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: formData.name, website: formData.website, notes: formData.notes })
-        })
-        setShowModal(null); setFormData({}); fetchData()
+        if (!formData.name?.trim() || submitting) return
+        setSubmitting(true)
+        try {
+            await fetch('/api/admin/hosting', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: formData.name, website: formData.website, notes: formData.notes })
+            })
+            setShowModal(null); setFormData({}); fetchData()
+        } finally { setSubmitting(false) }
     }
 
     const handleAddHost = async () => {
-        if (!formData.name?.trim()) return
-        await fetch('/api/admin/hosting/hosts', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ providerId: modalParentId, name: formData.name, ipAddress: formData.ipAddress, plan: formData.plan, expiryDate: formData.expiryDate, notes: formData.notes })
-        })
-        setShowModal(null); setFormData({}); setModalParentId(''); fetchData()
+        if (!formData.name?.trim() || submitting) return
+        setSubmitting(true)
+        try {
+            await fetch('/api/admin/hosting/hosts', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ providerId: modalParentId, name: formData.name, ipAddress: formData.ipAddress, plan: formData.plan, expiryDate: formData.expiryDate, notes: formData.notes })
+            })
+            setShowModal(null); setFormData({}); setModalParentId(''); fetchData()
+        } finally { setSubmitting(false) }
     }
 
     const handleAddDomain = async () => {
-        if (!formData.name?.trim()) return
-        await fetch('/api/admin/hosting/domains', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ hostId: modalParentId, name: formData.name, expiryDate: formData.expiryDate, sslExpiry: formData.sslExpiry, registrar: formData.registrar, notes: formData.notes })
-        })
-        setShowModal(null); setFormData({}); setModalParentId(''); fetchData()
+        if (!formData.name?.trim() || submitting) return
+        setSubmitting(true)
+        try {
+            await fetch('/api/admin/hosting/domains', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hostId: modalParentId, name: formData.name, expiryDate: formData.expiryDate, sslExpiry: formData.sslExpiry, registrar: formData.registrar, notes: formData.notes })
+            })
+            setShowModal(null); setFormData({}); setModalParentId(''); fetchData()
+        } finally { setSubmitting(false) }
     }
 
     const handleDelete = async (type: 'providers' | 'hosts' | 'domains', id: string) => {
@@ -361,7 +370,8 @@ export default function HostingPage() {
                             <div className="flex gap-3 pt-2">
                                 <button type="button" onClick={() => setShowModal(null)} className="flex-1 px-4 py-2.5 text-sm font-medium text-midnight-400 border border-white/[0.08] rounded-lg hover:bg-white/[0.04]">Cancel</button>
                                 <button type="button" onClick={() => { showModal === 'provider' ? handleAddProvider() : showModal === 'host' ? handleAddHost() : handleAddDomain() }}
-                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors">Add</button>
+                                    disabled={submitting}
+                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{submitting ? 'Adding...' : 'Add'}</button>
                             </div>
                         </div>
                     </div>
