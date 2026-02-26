@@ -20,7 +20,9 @@ import {
     CheckCircle2,
     AlertTriangle,
     Link2,
-    ExternalLink
+    ExternalLink,
+    Tag,
+    Settings
 } from 'lucide-react'
 
 interface ChecklistItem {
@@ -39,9 +41,16 @@ interface Task {
     due_date: string | null
     assigned_to: string | null
     assigned_user: { id: string; name: string; email: string } | null
+    category_id: string | null
     created_at: string
-    // client-side enrichment
     checklists?: ChecklistItem[]
+}
+
+interface TaskCategory {
+    id: string
+    project_id: string
+    name: string
+    color: string
 }
 
 interface Project {
@@ -88,6 +97,14 @@ export default function ProjectDetailPage() {
     const [showAddLink, setShowAddLink] = useState(false)
     const [newLink, setNewLink] = useState({ label: '', url: '', type: 'WEBSITE' })
 
+    // Categories
+    const [categories, setCategories] = useState<TaskCategory[]>([])
+    const [filterCategory, setFilterCategory] = useState<string | null>(null)
+    const [newTaskCategory, setNewTaskCategory] = useState<string>('')
+    const [showCategoryModal, setShowCategoryModal] = useState(false)
+    const [newCatName, setNewCatName] = useState('')
+    const [newCatColor, setNewCatColor] = useState('#8b5cf6')
+
     // Drag state
     const [draggedTask, setDraggedTask] = useState<Task | null>(null)
     const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
@@ -107,21 +124,24 @@ export default function ProjectDetailPage() {
 
     const fetchAll = async () => {
         try {
-            const [projectRes, tasksRes, membersRes, linksRes] = await Promise.all([
+            const [projectRes, tasksRes, membersRes, linksRes, catsRes] = await Promise.all([
                 fetch(`/api/admin/projects?id=${projectId}`),
                 fetch(`/api/tasks?projectId=${projectId}`),
                 fetch(`/api/admin/projects/users?projectId=${projectId}`),
-                fetch(`/api/projects/links?projectId=${projectId}`)
+                fetch(`/api/projects/links?projectId=${projectId}`),
+                fetch(`/api/projects/categories?projectId=${projectId}`)
             ])
             const projectData = await projectRes.json()
             const tasksData = await tasksRes.json()
             const membersData = await membersRes.json()
             const linksData = await linksRes.json()
+            const catsData = await catsRes.json()
 
             if (projectData.project) setProject(projectData.project)
             if (tasksData.tasks) setTasks(tasksData.tasks)
             if (membersData.userProjects) setMembers(membersData.userProjects)
             if (linksData.links) setProjectLinks(linksData.links)
+            if (catsData.categories) setCategories(catsData.categories)
         } catch (err) {
             console.error(err)
         } finally {
@@ -132,6 +152,7 @@ export default function ProjectDetailPage() {
     const getColumnTasks = (status: string) => {
         return tasks
             .filter(t => t.status === status)
+            .filter(t => !filterCategory || t.category_id === filterCategory)
             .sort((a, b) => a.position - b.position)
     }
 
@@ -141,12 +162,13 @@ export default function ProjectDetailPage() {
             const res = await fetch('/api/tasks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId, title: newTaskTitle, status })
+                body: JSON.stringify({ projectId, title: newTaskTitle, status, categoryId: newTaskCategory || null })
             })
             const data = await res.json()
             if (data.task) {
                 setTasks(prev => [...prev, data.task])
                 setNewTaskTitle('')
+                setNewTaskCategory('')
                 setAddingTo(null)
             }
         } catch (err) { console.error(err) }
@@ -483,6 +505,27 @@ export default function ProjectDetailPage() {
                         )}
                     </div>
 
+                    {/* Category Filter Bar */}
+                    <div className="flex items-center gap-2 mb-4 flex-wrap">
+                        <Tag className="w-4 h-4 text-midnight-500" />
+                        <button onClick={() => setFilterCategory(null)}
+                            className={`px-3 py-1 text-xs font-medium rounded-full border transition-all ${!filterCategory ? 'bg-violet-600 border-violet-500 text-white' : 'border-white/[0.08] text-midnight-500 hover:text-white hover:border-white/[0.15]'
+                                }`}>All</button>
+                        {categories.map(cat => (
+                            <button key={cat.id} onClick={() => setFilterCategory(filterCategory === cat.id ? null : cat.id)}
+                                className={`px-3 py-1 text-xs font-medium rounded-full border transition-all flex items-center gap-1.5 ${filterCategory === cat.id ? 'text-white border-white/20' : 'text-midnight-400 border-white/[0.06] hover:border-white/[0.15] hover:text-white'
+                                    }`}
+                                style={filterCategory === cat.id ? { backgroundColor: cat.color + '30', borderColor: cat.color + '60' } : {}}>
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                                {cat.name}
+                            </button>
+                        ))}
+                        <button onClick={() => setShowCategoryModal(true)}
+                            className="px-2 py-1 text-midnight-600 hover:text-violet-400 transition-colors">
+                            <Settings className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+
                     <div className="flex gap-4 min-h-[calc(100vh-120px)]" style={{ minWidth: 'max-content' }}>
                         {COLUMNS.map((column) => {
                             const columnTasks = getColumnTasks(column.key)
@@ -511,6 +554,13 @@ export default function ProjectDetailPage() {
                                                 <input type="text" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)}
                                                     onKeyDown={(e) => { if (e.key === 'Enter') handleAddTask(column.key); if (e.key === 'Escape') setAddingTo(null) }}
                                                     className="w-full bg-transparent text-white text-sm placeholder-midnight-600 focus:outline-none" placeholder="Task title..." autoFocus />
+                                                {categories.length > 0 && (
+                                                    <select value={newTaskCategory} onChange={(e) => setNewTaskCategory(e.target.value)}
+                                                        className="w-full mt-2 px-2 py-1 bg-white/[0.04] border border-white/[0.06] rounded text-xs text-midnight-400 focus:outline-none [color-scheme:dark]">
+                                                        <option value="" className="bg-[#0f0f23]">No category</option>
+                                                        {categories.map(c => <option key={c.id} value={c.id} className="bg-[#0f0f23]">{c.name}</option>)}
+                                                    </select>
+                                                )}
                                                 <div className="flex items-center gap-2 mt-2">
                                                     <button onClick={() => handleAddTask(column.key)} className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-md transition-colors">Add</button>
                                                     <button onClick={() => setAddingTo(null)} className="p-1 text-midnight-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
@@ -526,6 +576,14 @@ export default function ProjectDetailPage() {
                                                 <div className="flex items-start gap-2">
                                                     <GripVertical className="w-4 h-4 text-midnight-700 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                     <div className="flex-1 min-w-0">
+                                                        {(() => {
+                                                            const cat = categories.find(c => c.id === task.category_id); return cat ? (
+                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium mb-1" style={{ backgroundColor: cat.color + '20', color: cat.color, border: `1px solid ${cat.color}30` }}>
+                                                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                                                                    {cat.name}
+                                                                </span>
+                                                            ) : null
+                                                        })()}
                                                         <p className="text-sm text-white font-medium">{task.title}</p>
                                                         {task.description && <p className="text-xs text-midnight-500 mt-1 line-clamp-1">{task.description}</p>}
                                                     </div>
@@ -602,8 +660,8 @@ export default function ProjectDetailPage() {
                                 )}
                             </div>
 
-                            {/* Due Date & Assignee row */}
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Due Date, Assignee & Category row */}
+                            <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                         <Calendar className="w-3.5 h-3.5" /> Due Date
@@ -622,6 +680,27 @@ export default function ProjectDetailPage() {
                                         <option value="" className="bg-[#0f0f23]">Unassigned</option>
                                         {members.map((m) => (
                                             <option key={m.user_id} value={m.user_id} className="bg-[#0f0f23]">{m.users?.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <Tag className="w-3.5 h-3.5" /> Category
+                                    </h4>
+                                    <select value={selectedTask.category_id || ''}
+                                        onChange={async (e) => {
+                                            const categoryId = e.target.value || null
+                                            setSelectedTask({ ...selectedTask, category_id: categoryId })
+                                            setTasks(prev => prev.map(t => t.id === selectedTask.id ? { ...t, category_id: categoryId } : t))
+                                            await fetch(`/api/tasks/${selectedTask.id}`, {
+                                                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ categoryId })
+                                            })
+                                        }}
+                                        className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]">
+                                        <option value="" className="bg-[#0f0f23]">No category</option>
+                                        {categories.map(c => (
+                                            <option key={c.id} value={c.id} className="bg-[#0f0f23]">{c.name}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -681,6 +760,67 @@ export default function ProjectDetailPage() {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Category Management Modal */}
+            {showCategoryModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                        <div className="flex items-center justify-between mb-5">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2"><Tag className="w-5 h-5 text-violet-400" /> Categories</h3>
+                            <button onClick={() => setShowCategoryModal(false)} className="p-1 text-midnight-500 hover:text-white"><X className="w-5 h-5" /></button>
+                        </div>
+
+                        {/* Add new category */}
+                        <div className="flex gap-2 mb-4">
+                            <input type="color" value={newCatColor} onChange={(e) => setNewCatColor(e.target.value)}
+                                className="w-10 h-10 rounded-lg cursor-pointer bg-transparent border border-white/[0.06]" />
+                            <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
+                                onKeyDown={async (e) => {
+                                    if (e.key === 'Enter' && newCatName.trim()) {
+                                        const res = await fetch('/api/projects/categories', {
+                                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ projectId, name: newCatName.trim(), color: newCatColor })
+                                        })
+                                        const data = await res.json()
+                                        if (data.category) { setCategories(prev => [...prev, data.category]); setNewCatName('') }
+                                    }
+                                }}
+                                className="flex-1 px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-600 focus:outline-none focus:border-violet-500/40" placeholder="Category name..." />
+                            <button onClick={async () => {
+                                if (!newCatName.trim()) return
+                                const res = await fetch('/api/projects/categories', {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ projectId, name: newCatName.trim(), color: newCatColor })
+                                })
+                                const data = await res.json()
+                                if (data.category) { setCategories(prev => [...prev, data.category]); setNewCatName('') }
+                            }} className="px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg"><Plus className="w-4 h-4" /></button>
+                        </div>
+
+                        {/* List */}
+                        <div className="space-y-2">
+                            {categories.length === 0 && (
+                                <p className="text-sm text-midnight-600 text-center py-4">No categories yet</p>
+                            )}
+                            {categories.map(cat => (
+                                <div key={cat.id} className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/[0.04] rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
+                                        <span className="text-sm text-white font-medium">{cat.name}</span>
+                                        <span className="text-[10px] text-midnight-600">{tasks.filter(t => t.category_id === cat.id).length} tasks</span>
+                                    </div>
+                                    <button onClick={async () => {
+                                        if (!confirm(`ต้องการลบ category "${cat.name}" จริงหรือไม่?`)) return
+                                        await fetch(`/api/projects/categories?id=${cat.id}`, { method: 'DELETE' })
+                                        setCategories(prev => prev.filter(c => c.id !== cat.id))
+                                        if (filterCategory === cat.id) setFilterCategory(null)
+                                    }} className="p-1 text-midnight-700 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

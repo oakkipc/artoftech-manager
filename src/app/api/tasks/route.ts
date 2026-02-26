@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 // POST: Create a new task
 export async function POST(request: Request) {
     try {
-        const { projectId, title, description, status, assignedTo, dueDate } = await request.json()
+        const { projectId, title, description, status, assignedTo, dueDate, categoryId } = await request.json()
 
         if (!projectId || !title) {
             return NextResponse.json({ error: 'projectId and title are required' }, { status: 400 })
@@ -86,7 +86,8 @@ export async function POST(request: Request) {
                 status: status || 'TODO',
                 position,
                 assigned_to: assignedTo || null,
-                due_date: dueDate || null
+                due_date: dueDate || null,
+                category_id: categoryId || null
             })
             .select('*')
             .single()
