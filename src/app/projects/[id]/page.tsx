@@ -465,6 +465,60 @@ export default function ProjectDetailPage() {
                         )
                     })()}
 
+                    {/* Category Pie Chart */}
+                    {tasks.length > 0 && categories.length > 0 && (() => {
+                        const catData = categories.map(cat => ({
+                            name: cat.name,
+                            color: cat.color,
+                            count: tasks.filter(t => t.category_id === cat.id).length
+                        })).filter(d => d.count > 0)
+                        const uncategorized = tasks.filter(t => !t.category_id).length
+                        if (uncategorized > 0) catData.push({ name: 'Uncategorized', color: '#4b5563', count: uncategorized })
+
+                        const total = catData.reduce((s, d) => s + d.count, 0)
+                        if (total === 0) return null
+
+                        // Build SVG donut segments
+                        const radius = 50
+                        const cx = 60, cy = 60
+                        const circumference = 2 * Math.PI * radius
+                        let offset = 0
+
+                        return (
+                            <div className="mb-5 bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex items-center gap-6">
+                                <div className="shrink-0">
+                                    <svg width="120" height="120" viewBox="0 0 120 120">
+                                        {catData.map((d, i) => {
+                                            const pct = d.count / total
+                                            const dashLen = pct * circumference
+                                            const dashOffset = -offset
+                                            offset += dashLen
+                                            return (
+                                                <circle key={i} cx={cx} cy={cy} r={radius} fill="none"
+                                                    stroke={d.color} strokeWidth="18"
+                                                    strokeDasharray={`${dashLen} ${circumference - dashLen}`}
+                                                    strokeDashoffset={dashOffset}
+                                                    transform={`rotate(-90 ${cx} ${cy})`}
+                                                    className="transition-all duration-500" />
+                                            )
+                                        })}
+                                        <text x={cx} y={cy - 4} textAnchor="middle" className="fill-white text-lg font-bold">{total}</text>
+                                        <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[9px]">tasks</text>
+                                    </svg>
+                                </div>
+                                <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2">
+                                    {catData.map((d, i) => (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                                            <span className="text-xs text-white font-medium truncate">{d.name}</span>
+                                            <span className="text-xs text-midnight-500 ml-auto">{d.count}</span>
+                                            <span className="text-[10px] text-midnight-600">{Math.round((d.count / total) * 100)}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )
+                    })()}
                     {/* Project Links */}
                     <div className="mb-5 flex flex-wrap items-center gap-2">
                         {projectLinks.map((link) => (
