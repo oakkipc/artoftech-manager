@@ -174,6 +174,106 @@ export default function HostingPage() {
                         </div>
                     </div>
 
+                    {/* Expiring / Expired Lists */}
+                    {(() => {
+                        const now = new Date()
+                        const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+                        const allHosts = providers.flatMap(p => p.hosts.map(h => ({ ...h, providerName: p.name })))
+                        const allDomains = providers.flatMap(p => p.hosts.flatMap(h => h.domains.map(d => ({ ...d, hostName: h.name, providerName: p.name }))))
+
+                        const expiringHosts = allHosts.filter(h => h.expiry_date && new Date(h.expiry_date) <= in30).sort((a, b) => new Date(a.expiry_date!).getTime() - new Date(b.expiry_date!).getTime())
+                        const expiringDomains = allDomains.filter(d => d.expiry_date && new Date(d.expiry_date) <= in30).sort((a, b) => new Date(a.expiry_date!).getTime() - new Date(b.expiry_date!).getTime())
+
+                        if (expiringHosts.length === 0 && expiringDomains.length === 0) return null
+
+                        return (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+                                {/* Expiring Hosts */}
+                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Server className="w-4 h-4 text-amber-400" />
+                                        <h3 className="text-sm font-bold text-white">Hosts — Expiring / Expired</h3>
+                                        {expiringHosts.length > 0 && (
+                                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">{expiringHosts.length}</span>
+                                        )}
+                                    </div>
+                                    {expiringHosts.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {expiringHosts.map(h => {
+                                                const status = getExpiryStatus(h.expiry_date)
+                                                const isExpired = h.expiry_date && new Date(h.expiry_date) < now
+                                                return (
+                                                    <div key={h.id} className={`flex items-center justify-between p-3 rounded-lg border ${isExpired ? 'bg-red-500/[0.04] border-red-500/15' : 'bg-amber-500/[0.03] border-amber-500/10'}`}>
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            <Server className={`w-4 h-4 shrink-0 ${isExpired ? 'text-red-400' : 'text-amber-400'}`} />
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm text-white font-medium truncate">{h.name}</p>
+                                                                <p className="text-[11px] text-midnight-600">{h.providerName}{h.ip_address ? ` · ${h.ip_address}` : ''}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <span className={`text-[11px] flex items-center gap-1 ${status.color}`}>
+                                                                <Calendar className="w-3 h-3" />
+                                                                {new Date(h.expiry_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </span>
+                                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${isExpired ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                                                                {status.label}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-midnight-600 text-center py-4">No expiring hosts 🎉</p>
+                                    )}
+                                </div>
+
+                                {/* Expiring Domains */}
+                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Globe className="w-4 h-4 text-amber-400" />
+                                        <h3 className="text-sm font-bold text-white">Domains — Expiring / Expired</h3>
+                                        {expiringDomains.length > 0 && (
+                                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">{expiringDomains.length}</span>
+                                        )}
+                                    </div>
+                                    {expiringDomains.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {expiringDomains.map(d => {
+                                                const status = getExpiryStatus(d.expiry_date)
+                                                const isExpired = d.expiry_date && new Date(d.expiry_date) < now
+                                                return (
+                                                    <div key={d.id} className={`flex items-center justify-between p-3 rounded-lg border ${isExpired ? 'bg-red-500/[0.04] border-red-500/15' : 'bg-amber-500/[0.03] border-amber-500/10'}`}>
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            <Globe className={`w-4 h-4 shrink-0 ${isExpired ? 'text-red-400' : 'text-amber-400'}`} />
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm text-white font-medium truncate">{d.name}</p>
+                                                                <p className="text-[11px] text-midnight-600">{d.providerName} · {d.hostName}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <span className={`text-[11px] flex items-center gap-1 ${status.color}`}>
+                                                                <Calendar className="w-3 h-3" />
+                                                                {new Date(d.expiry_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </span>
+                                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${isExpired ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                                                                {status.label}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-midnight-600 text-center py-4">No expiring domains 🎉</p>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })()}
+
                     {/* Providers List */}
                     <div className="space-y-4">
                         {providers.map((provider) => (
