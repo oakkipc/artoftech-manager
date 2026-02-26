@@ -13,7 +13,8 @@ import {
   X,
   Plus,
   Pin,
-  PinOff
+  PinOff,
+  ArrowRight
 } from 'lucide-react'
 
 interface Project {
@@ -249,7 +250,10 @@ export default function AdminProjectsPage() {
                     </span>
                   </div>
                 </div>
-                <h3 className="text-base font-bold text-white mb-1 flex items-center gap-2">
+                <h3
+                  onClick={() => router.push(`/projects/${project.id}`)}
+                  className="text-base font-bold text-white mb-1 flex items-center gap-2 cursor-pointer hover:text-violet-400 transition-colors"
+                >
                   {project.name}
                   {project.pinned && <Pin className="w-3 h-3 text-amber-400" />}
                 </h3>
@@ -261,13 +265,22 @@ export default function AdminProjectsPage() {
                     <Clock className="w-3.5 h-3.5" />
                     {new Date(project.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </div>
-                  <button
-                    onClick={() => openUserModal(project)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] hover:bg-violet-600 text-xs font-medium text-midnight-400 hover:text-white rounded-lg transition-all"
-                  >
-                    <Users className="w-3.5 h-3.5" />
-                    Team
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openUserModal(project)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-xs font-medium text-midnight-400 hover:text-white rounded-lg transition-all"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      Team
+                    </button>
+                    <button
+                      onClick={() => router.push(`/projects/${project.id}`)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-xs font-medium text-white rounded-lg transition-all"
+                    >
+                      Manage
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
