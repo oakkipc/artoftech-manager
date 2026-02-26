@@ -18,7 +18,9 @@ import {
     ListTodo,
     Clock,
     CheckCircle2,
-    AlertTriangle
+    AlertTriangle,
+    Link2,
+    ExternalLink
 } from 'lucide-react'
 
 interface ChecklistItem {
@@ -56,6 +58,13 @@ interface UserProject {
     users: { id: string; name: string; email: string }
 }
 
+interface ProjectLink {
+    id: string
+    label: string
+    url: string
+    type: string
+}
+
 const COLUMNS = [
     { key: 'TODO', label: 'To Do', color: 'border-blue-500/30', dotColor: 'bg-blue-400', bgHover: 'bg-blue-500/5' },
     { key: 'IN_PROGRESS', label: 'In Progress', color: 'border-amber-500/30', dotColor: 'bg-amber-400', bgHover: 'bg-amber-500/5' },
@@ -73,6 +82,11 @@ export default function ProjectDetailPage() {
     const [loading, setLoading] = useState(true)
     const [newTaskTitle, setNewTaskTitle] = useState('')
     const [addingTo, setAddingTo] = useState<string | null>(null)
+
+    // Project links
+    const [projectLinks, setProjectLinks] = useState<ProjectLink[]>([])
+    const [showAddLink, setShowAddLink] = useState(false)
+    const [newLink, setNewLink] = useState({ label: '', url: '', type: 'WEBSITE' })
 
     // Drag state
     const [draggedTask, setDraggedTask] = useState<Task | null>(null)
@@ -93,19 +107,22 @@ export default function ProjectDetailPage() {
 
     const fetchAll = async () => {
         try {
-            const [projectRes, tasksRes, membersRes] = await Promise.all([
+            const [projectRes, tasksRes, membersRes, linksRes] = await Promise.all([
                 fetch('/api/admin/projects'),
                 fetch(`/api/tasks?projectId=${projectId}`),
-                fetch(`/api/admin/projects/users?projectId=${projectId}`)
+                fetch(`/api/admin/projects/users?projectId=${projectId}`),
+                fetch(`/api/projects/links?projectId=${projectId}`)
             ])
             const projectsData = await projectRes.json()
             const tasksData = await tasksRes.json()
             const membersData = await membersRes.json()
+            const linksData = await linksRes.json()
 
             const proj = projectsData.projects?.find((p: any) => p.id === projectId)
             if (proj) setProject(proj)
             if (tasksData.tasks) setTasks(tasksData.tasks)
             if (membersData.userProjects) setMembers(membersData.userProjects)
+            if (linksData.links) setProjectLinks(linksData.links)
         } catch (err) {
             console.error(err)
         } finally {
@@ -262,6 +279,25 @@ export default function ProjectDetailPage() {
         setDraggedTask(null)
     }
 
+    // Project links
+    const handleAddLink = async () => {
+        if (!newLink.label.trim() || !newLink.url.trim()) return
+        try {
+            const res = await fetch('/api/projects/links', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId, label: newLink.label, url: newLink.url, type: newLink.type })
+            })
+            const data = await res.json()
+            if (data.link) setProjectLinks(prev => [...prev, data.link])
+            setNewLink({ label: '', url: '', type: 'WEBSITE' }); setShowAddLink(false)
+        } catch (err) { console.error(err) }
+    }
+
+    const handleDeleteLink = async (id: string) => {
+        setProjectLinks(prev => prev.filter(l => l.id !== id))
+        try { await fetch(`/api/projects/links?id=${id}`, { method: 'DELETE' }) } catch { }
+    }
+
     // Helpers
     const getDueDateColor = (dueDate: string | null) => {
         if (!dueDate) return ''
@@ -404,6 +440,47 @@ export default function ProjectDetailPage() {
                             </div>
                         )
                     })()}
+
+                    {/* Project Links */}
+                    <div className="mb-5 flex flex-wrap items-center gap-2">
+                        {projectLinks.map((link) => (
+                            <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
+                                className="group flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:border-violet-500/20 transition-all text-sm">
+                                <Link2 className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+                                <span className="text-white font-medium">{link.label}</span>
+                                <ExternalLink className="w-3 h-3 text-midnight-600 group-hover:text-violet-400" />
+                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteLink(link.id) }}
+                                    className="ml-1 p-0.5 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </a>
+                        ))}
+                        {showAddLink ? (
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.04] border border-violet-500/20 rounded-lg">
+                                <select value={newLink.type} onChange={(e) => setNewLink({ ...newLink, type: e.target.value })}
+                                    className="bg-transparent text-xs text-midnight-400 focus:outline-none [color-scheme:dark]">
+                                    <option value="WEBSITE" className="bg-[#0f0f23]">Website</option>
+                                    <option value="FILE" className="bg-[#0f0f23]">File</option>
+                                    <option value="REPO" className="bg-[#0f0f23]">Repo</option>
+                                    <option value="DESIGN" className="bg-[#0f0f23]">Design</option>
+                                    <option value="OTHER" className="bg-[#0f0f23]">Other</option>
+                                </select>
+                                <input type="text" value={newLink.label} onChange={(e) => setNewLink({ ...newLink, label: e.target.value })}
+                                    className="w-24 bg-transparent text-white text-sm placeholder-midnight-600 focus:outline-none" placeholder="Label" />
+                                <input type="url" value={newLink.url} onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddLink() }}
+                                    className="w-40 bg-transparent text-white text-sm placeholder-midnight-600 focus:outline-none" placeholder="https://..." />
+                                <button onClick={handleAddLink} className="text-violet-400 hover:text-violet-300"><Plus className="w-4 h-4" /></button>
+                                <button onClick={() => setShowAddLink(false)} className="text-midnight-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+                            </div>
+                        ) : (
+                            <button onClick={() => setShowAddLink(true)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs text-midnight-500 hover:text-violet-400 border border-dashed border-white/[0.06] hover:border-violet-500/20 rounded-lg transition-all">
+                                <Plus className="w-3.5 h-3.5" /> Add Link
+                            </button>
+                        )}
+                    </div>
+
                     <div className="flex gap-4 min-h-[calc(100vh-120px)]" style={{ minWidth: 'max-content' }}>
                         {COLUMNS.map((column) => {
                             const columnTasks = getColumnTasks(column.key)

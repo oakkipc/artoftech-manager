@@ -13,7 +13,8 @@ import {
     Menu,
     X,
     Pin,
-    LayoutGrid
+    LayoutGrid,
+    Server
 } from 'lucide-react'
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
         items: [
             { name: 'Users', href: '/admin/users', icon: Users },
             { name: 'Projects', href: '/admin/projects', icon: FolderKanban },
+            { name: 'Host & Domain', href: '/admin/hosting', icon: Server },
         ]
     },
     {
