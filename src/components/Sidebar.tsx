@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSidebar } from '@/context/SidebarContext'
 import {
     Users,
     FolderKanban,
@@ -14,7 +15,10 @@ import {
     X,
     Pin,
     LayoutGrid,
-    Server
+    Server,
+    ChevronLeft,
+    ChevronRight,
+    Wallet
 } from 'lucide-react'
 
 const navItems = [
@@ -30,6 +34,8 @@ const navItems = [
             { name: 'Users', href: '/admin/users', icon: Users },
             { name: 'Projects', href: '/admin/projects', icon: FolderKanban },
             { name: 'Host & Domain', href: '/admin/hosting', icon: Server },
+            { name: 'Budget', href: '/budget', icon: Wallet },
+            { name: 'Vendors', href: '/admin/vendors', icon: Users },
         ]
     },
     {
@@ -47,8 +53,8 @@ interface PinnedProject {
 
 export function Sidebar() {
     const pathname = usePathname()
+    const { isCollapsed, isOpen, toggleCollapse, toggleOpen, setIsOpen } = useSidebar()
     const [user, setUser] = useState<any>(null)
-    const [isOpen, setIsOpen] = useState(false)
     const [pinnedProjects, setPinnedProjects] = useState<PinnedProject[]>([])
 
     useEffect(() => {
@@ -90,7 +96,7 @@ export function Sidebar() {
         <>
             {/* Mobile toggle */}
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={toggleOpen}
                 className={`
                     fixed top-4 left-4 z-50 lg:hidden p-2.5 
                     bg-[#0a0a1a]/80 backdrop-blur-lg rounded-xl border border-white/10
@@ -110,33 +116,45 @@ export function Sidebar() {
             )}
 
             <aside className={`
-        fixed lg:sticky top-0 left-0 h-screen z-40
-        w-[280px] flex flex-col
-        bg-[#0a0a1a]/95 backdrop-blur-2xl
-        border-r border-white/[0.06]
-        transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+                fixed lg:sticky top-0 left-0 h-screen z-40
+                ${isCollapsed ? 'w-[80px]' : 'w-[280px]'} flex flex-col
+                bg-[#0a0a1a]/95 backdrop-blur-2xl
+                border-r border-white/[0.06]
+                transition-all duration-300 ease-in-out
+                ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            `}>
                 {/* Brand */}
-                <div className="p-6 pb-4">
+                <div className="p-6 pb-4 relative">
                     <Link href="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-600/25 group-hover:shadow-violet-600/40 group-hover:scale-105 transition-all duration-300">
+                        <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-600/25 group-hover:shadow-violet-600/40 group-hover:scale-105 transition-all duration-300 shrink-0">
                             <Shield className="w-5 h-5 text-white" />
                         </div>
-                        <div>
-                            <span className="text-lg font-bold text-white tracking-tight block leading-tight">AOT Manager</span>
-                            <span className="text-[10px] font-semibold text-midnight-500 uppercase tracking-[0.2em]">Admin Panel</span>
-                        </div>
+                        {!isCollapsed && (
+                            <div className="transition-opacity duration-300">
+                                <span className="text-lg font-bold text-white tracking-tight block leading-tight">AOT Manager</span>
+                                <span className="text-[10px] font-semibold text-midnight-500 uppercase tracking-[0.2em]">Admin Panel</span>
+                            </div>
+                        )}
                     </Link>
+
+                    {/* Desktop Collapse Toggle */}
+                    <button
+                        onClick={toggleCollapse}
+                        className="hidden lg:flex absolute -right-3 top-8 w-6 h-6 bg-violet-600 rounded-full border border-white/10 items-center justify-center text-white shadow-lg hover:bg-violet-500 transition-colors z-50"
+                    >
+                        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                    </button>
                 </div>
 
                 {/* Navigation */}
                 <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
                     {navItems.map((group, groupIdx) => (
                         <div key={group.label} className="mb-6">
-                            <div className="text-[10px] font-bold text-midnight-600 uppercase tracking-[0.2em] px-4 mb-2">
-                                {group.label}
-                            </div>
+                            {!isCollapsed && (
+                                <div className="text-[10px] font-bold text-midnight-600 uppercase tracking-[0.2em] px-4 mb-2 transition-opacity duration-300">
+                                    {group.label}
+                                </div>
+                            )}
                             <div className="space-y-1">
                                 {group.items.map((item) => {
                                     const isActive = pathname === item.href
@@ -145,19 +163,20 @@ export function Sidebar() {
                                             key={item.name}
                                             href={item.href}
                                             onClick={() => setIsOpen(false)}
+                                            title={isCollapsed ? item.name : undefined}
                                             className={`
-                        flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 group/item
-                        ${isActive
+                                                flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-2.5 rounded-xl transition-all duration-200 group/item
+                                                ${isActive
                                                     ? 'bg-gradient-to-r from-violet-600/20 to-indigo-600/10 text-white border border-violet-500/20'
                                                     : 'text-midnight-400 hover:bg-white/[0.04] hover:text-white border border-transparent'
                                                 }
-                      `}
+                                            `}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <item.icon className={`w-[18px] h-[18px] ${isActive ? 'text-violet-400' : 'text-midnight-500 group-hover/item:text-violet-400 transition-colors'}`} />
-                                                <span className="text-sm font-medium">{item.name}</span>
+                                                <item.icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-violet-400' : 'text-midnight-500 group-hover/item:text-violet-400 transition-colors'}`} />
+                                                {!isCollapsed && <span className="text-sm font-medium transition-opacity duration-300">{item.name}</span>}
                                             </div>
-                                            {isActive && (
+                                            {!isCollapsed && isActive && (
                                                 <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-sm shadow-violet-400/50" />
                                             )}
                                         </Link>
@@ -167,12 +186,14 @@ export function Sidebar() {
 
                             {/* Pinned Projects — show right after MAIN group */}
                             {groupIdx === 0 && pinnedProjects.length > 0 && (
-                                <div className="mt-3 pt-3 border-t border-white/[0.04]">
-                                    <div className="text-[10px] font-bold text-midnight-600 uppercase tracking-[0.2em] px-4 mb-2 flex items-center gap-1.5">
-                                        <Pin className="w-3 h-3" />
-                                        Pinned
-                                    </div>
-                                    <div className="space-y-1">
+                                <div className={`mt-3 pt-3 border-t border-white/[0.04] ${isCollapsed ? 'flex justify-center' : ''}`}>
+                                    {!isCollapsed && (
+                                        <div className="text-[10px] font-bold text-midnight-600 uppercase tracking-[0.2em] px-4 mb-2 flex items-center gap-1.5 transition-opacity duration-300">
+                                            <Pin className="w-3 h-3" />
+                                            Pinned
+                                        </div>
+                                    )}
+                                    <div className="space-y-1 w-full">
                                         {pinnedProjects.map((project) => {
                                             const isActive = pathname === `/projects/${project.id}`
                                             return (
@@ -180,19 +201,20 @@ export function Sidebar() {
                                                     key={project.id}
                                                     href={`/projects/${project.id}`}
                                                     onClick={() => setIsOpen(false)}
+                                                    title={isCollapsed ? project.name : undefined}
                                                     className={`
-                                flex items-center justify-between px-4 py-2 rounded-xl transition-all duration-200 group/item
-                                ${isActive
+                                                        flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-2 rounded-xl transition-all duration-200 group/item
+                                                        ${isActive
                                                             ? 'bg-gradient-to-r from-amber-600/15 to-orange-600/10 text-white border border-amber-500/20'
                                                             : 'text-midnight-400 hover:bg-white/[0.04] hover:text-white border border-transparent'
                                                         }
-                              `}
+                                                    `}
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <LayoutGrid className={`w-[16px] h-[16px] ${isActive ? 'text-amber-400' : 'text-midnight-600 group-hover/item:text-amber-400 transition-colors'}`} />
-                                                        <span className="text-sm font-medium truncate">{project.name}</span>
+                                                        <LayoutGrid className={`w-[16px] h-[16px] shrink-0 ${isActive ? 'text-amber-400' : 'text-midnight-600 group-hover/item:text-amber-400 transition-colors'}`} />
+                                                        {!isCollapsed && <span className="text-sm font-medium truncate transition-opacity duration-300">{project.name}</span>}
                                                     </div>
-                                                    {isActive && (
+                                                    {!isCollapsed && isActive && (
                                                         <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
                                                     )}
                                                 </Link>
@@ -208,24 +230,27 @@ export function Sidebar() {
                 {/* User Section */}
                 <div className="p-3 mt-auto border-t border-white/[0.04]">
                     {user && (
-                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.04] mb-2">
+                        <div className={`p-3 rounded-xl bg-white/[0.03] border border-white/[0.04] mb-2 ${isCollapsed ? 'flex justify-center' : ''}`}>
                             <div className="flex items-center gap-3">
-                                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${getRoleColor(user.role)} flex items-center justify-center text-white text-sm font-bold shadow-lg`}>
+                                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${getRoleColor(user.role)} flex items-center justify-center text-white text-sm font-bold shadow-lg shrink-0`}>
                                     {user.name?.charAt(0)?.toUpperCase() || 'U'}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-                                    <p className="text-[11px] text-midnight-500 truncate">{user.role}</p>
-                                </div>
+                                {!isCollapsed && (
+                                    <div className="flex-1 min-w-0 transition-opacity duration-300">
+                                        <p className="text-sm font-semibold text-white truncate">{user.name}</p>
+                                        <p className="text-[11px] text-midnight-500 truncate">{user.role}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-midnight-500 hover:text-red-400 hover:bg-red-500/[0.06] rounded-xl transition-all duration-200 text-sm font-medium"
+                        title={isCollapsed ? 'Log out' : undefined}
+                        className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-4 py-2.5 text-midnight-500 hover:text-red-400 hover:bg-red-500/[0.06] rounded-xl transition-all duration-200 text-sm font-medium`}
                     >
-                        <LogOut className="w-[18px] h-[18px]" />
-                        <span>Log out</span>
+                        <LogOut className="w-[18px] h-[18px] shrink-0" />
+                        {!isCollapsed && <span className="transition-opacity duration-300">Log out</span>}
                     </button>
                 </div>
             </aside>

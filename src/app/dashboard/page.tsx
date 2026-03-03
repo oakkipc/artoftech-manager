@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Sidebar } from '@/components/Sidebar'
+import { useSidebar } from '@/context/SidebarContext'
 import {
     LayoutGrid,
     CheckCircle2,
@@ -98,6 +99,8 @@ export default function DashboardPage() {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
+    const { isCollapsed } = useSidebar()
+
     if (loading) {
         return (
             <div className="min-h-screen bg-midnight-950 flex items-center justify-center">
@@ -110,7 +113,7 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-midnight-950 flex">
             <Sidebar />
 
-            <main className="flex-1 min-w-0">
+            <main className={`flex-1 min-w-0 transition-all duration-300`}>
                 <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-8 py-4">
                     <h1 className="text-xl font-bold text-white">Dashboard</h1>
                     <p className="text-sm text-midnight-500">
@@ -210,8 +213,8 @@ export default function DashboardPage() {
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
                                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${task.status === 'IN_PROGRESS'
-                                                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                                        : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                                    : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                                                     }`}>{task.status === 'IN_PROGRESS' ? 'Active' : 'To Do'}</span>
                                                 {task.due_date && (
                                                     <span className={`text-[11px] flex items-center gap-1 ${isOverdue ? 'text-red-400' : 'text-midnight-500'}`}>

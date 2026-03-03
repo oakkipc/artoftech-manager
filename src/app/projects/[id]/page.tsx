@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Sidebar } from '@/components/Sidebar'
+import { useSidebar } from '@/context/SidebarContext'
 import {
     ArrowLeft,
     Plus,
@@ -22,7 +23,12 @@ import {
     Link2,
     ExternalLink,
     Tag,
-    Settings
+    Settings,
+    Check,
+    Edit2,
+    Wallet,
+    TrendingUp,
+    TrendingDown
 } from 'lucide-react'
 
 interface ChecklistItem {
@@ -105,9 +111,13 @@ export default function ProjectDetailPage() {
     const [showCategoryModal, setShowCategoryModal] = useState(false)
     const [newCatName, setNewCatName] = useState('')
     const [newCatColor, setNewCatColor] = useState('#8b5cf6')
+    const [editingCategory, setEditingCategory] = useState<TaskCategory | null>(null)
 
     // All checklists for donut chart
     const [allChecklists, setAllChecklists] = useState<ChecklistItem[]>([])
+
+    // Budget
+    const [budgetTransactions, setBudgetTransactions] = useState<any[]>([])
 
     // Drag state
     const [draggedTask, setDraggedTask] = useState<Task | null>(null)
@@ -119,6 +129,10 @@ export default function ProjectDetailPage() {
     const [newChecklistTitle, setNewChecklistTitle] = useState('')
     const [editingDescription, setEditingDescription] = useState(false)
     const [tempDescription, setTempDescription] = useState('')
+    const [editingTaskTitle, setEditingTaskTitle] = useState(false)
+    const [tempTaskTitle, setTempTaskTitle] = useState('')
+    const [editingChecklistId, setEditingChecklistId] = useState<string | null>(null)
+    const [tempChecklistTitle, setTempChecklistTitle] = useState('')
 
     useEffect(() => {
         const userStr = localStorage.getItem('user')
@@ -128,13 +142,14 @@ export default function ProjectDetailPage() {
 
     const fetchAll = async () => {
         try {
-            const [projectRes, tasksRes, membersRes, linksRes, catsRes, allCheckRes] = await Promise.all([
+            const [projectRes, tasksRes, membersRes, linksRes, catsRes, allCheckRes, budgetRes] = await Promise.all([
                 fetch(`/api/admin/projects?id=${projectId}`),
                 fetch(`/api/tasks?projectId=${projectId}`),
                 fetch(`/api/admin/projects/users?projectId=${projectId}`),
                 fetch(`/api/projects/links?projectId=${projectId}`),
                 fetch(`/api/projects/categories?projectId=${projectId}`),
-                fetch(`/api/checklists?projectId=${projectId}`)
+                fetch(`/api/checklists?projectId=${projectId}`),
+                fetch(`/api/budgets?projectId=${projectId}`)
             ])
             const projectData = await projectRes.json()
             const tasksData = await tasksRes.json()
@@ -142,6 +157,7 @@ export default function ProjectDetailPage() {
             const linksData = await linksRes.json()
             const catsData = await catsRes.json()
             const allCheckData = await allCheckRes.json()
+            const budgetData = await budgetRes.json()
 
             if (projectData.project) setProject(projectData.project)
             if (tasksData.tasks) setTasks(tasksData.tasks)
@@ -149,6 +165,7 @@ export default function ProjectDetailPage() {
             if (linksData.links) setProjectLinks(linksData.links)
             if (catsData.categories) setCategories(catsData.categories)
             if (allCheckData.checklists) setAllChecklists(allCheckData.checklists)
+            if (budgetData.transactions) setBudgetTransactions(budgetData.transactions)
         } catch (err) {
             console.error(err)
         } finally {
@@ -226,6 +243,12 @@ export default function ProjectDetailPage() {
         setEditingDescription(false)
     }
 
+    const handleSaveTaskTitle = async () => {
+        if (!selectedTask || !tempTaskTitle.trim()) return
+        await updateTask(selectedTask.id, { title: tempTaskTitle.trim() })
+        setEditingTaskTitle(false)
+    }
+
     const handleSetDueDate = async (date: string) => {
         if (!selectedTask) return
         await updateTask(selectedTask.id, { dueDate: date || null })
@@ -270,6 +293,18 @@ export default function ProjectDetailPage() {
         setTaskChecklists(prev => prev.filter(c => c.id !== id))
         try {
             await fetch(`/api/checklists?id=${id}`, { method: 'DELETE' })
+        } catch (err) { console.error(err) }
+    }
+
+    const handleUpdateChecklist = async (id: string, updates: any) => {
+        // Optimistic
+        setTaskChecklists(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c))
+        try {
+            await fetch('/api/checklists', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, ...updates })
+            })
         } catch (err) { console.error(err) }
     }
 
@@ -358,7 +393,7 @@ export default function ProjectDetailPage() {
         <div className="min-h-screen bg-midnight-950 flex">
             <Sidebar />
 
-            <main className="flex-1 min-w-0 flex flex-col">
+            <main className="flex-1 min-w-0 flex flex-col transition-all duration-300">
                 {/* Top bar */}
                 <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-4 sm:px-8 py-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -461,6 +496,18 @@ export default function ProjectDetailPage() {
                                 </div>
                                 <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
                                     <div className="flex items-center justify-between mb-1.5">
+                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Budget</p>
+                                        <Wallet className="w-3 h-3 text-violet-400" />
+                                    </div>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <p className="text-lg font-bold text-white leading-none">
+                                            ฿{(budgetTransactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount), 0) -
+                                                budgetTransactions.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount), 0)).toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
+                                    <div className="flex items-center justify-between mb-1.5">
                                         <p className="text-[10px] text-midnight-600 font-medium uppercase">Progress</p>
                                         <p className="text-sm font-bold text-white">{completion}%</p>
                                     </div>
@@ -471,6 +518,36 @@ export default function ProjectDetailPage() {
                             </div>
                         )
                     })()}
+
+                    {/* Budget Quick List */}
+                    {budgetTransactions.length > 0 && (
+                        <div className="mb-6 bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden">
+                            <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between">
+                                <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                                    <Wallet className="w-3.5 h-3.5 text-violet-400" /> Project Budget
+                                </h3>
+                                <Link href="/budget" className="text-[10px] font-bold text-violet-400 hover:text-violet-300 uppercase tracking-wider">View All</Link>
+                            </div>
+                            <div className="p-2 space-y-1">
+                                {budgetTransactions.slice(0, 3).map(t => (
+                                    <div key={t.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-1.5 rounded-md ${t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                {t.type === 'INCOME' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-white font-medium">{t.description || 'No description'}</p>
+                                                <p className="text-[10px] text-midnight-600">{new Date(t.date).toLocaleDateString('th-TH')}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`text-xs font-bold ${t.type === 'INCOME' ? 'text-emerald-400' : 'text-red-400'}`}>
+                                            {t.type === 'INCOME' ? '+' : '-'}฿{Number(t.amount).toLocaleString()}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Dashboard Charts Section */}
                     {tasks.length > 0 && (
@@ -787,7 +864,38 @@ export default function ProjectDetailPage() {
                         {/* Header */}
                         <div className="px-6 pt-6 pb-4 border-b border-white/[0.04] flex items-start justify-between">
                             <div className="flex-1 min-w-0 mr-4">
-                                <h2 className="text-lg font-bold text-white">{selectedTask.title}</h2>
+                                {editingTaskTitle ? (
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={tempTaskTitle}
+                                            onChange={(e) => setTempTaskTitle(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleSaveTaskTitle()
+                                                if (e.key === 'Escape') setEditingTaskTitle(false)
+                                            }}
+                                            className="flex-1 bg-white/[0.04] border border-violet-500/40 rounded-lg px-3 py-1 text-lg font-bold text-white focus:outline-none"
+                                            autoFocus
+                                        />
+                                        <button onClick={handleSaveTaskTitle} className="p-1.5 text-emerald-400 hover:text-emerald-300">
+                                            <Check className="w-5 h-5" />
+                                        </button>
+                                        <button onClick={() => setEditingTaskTitle(false)} className="p-1.5 text-midnight-500 hover:text-white">
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 group/title">
+                                        <h2 className="text-lg font-bold text-white cursor-pointer hover:text-violet-400 transition-colors"
+                                            onClick={() => { setEditingTaskTitle(true); setTempTaskTitle(selectedTask.title) }}>
+                                            {selectedTask.title}
+                                        </h2>
+                                        <button onClick={() => { setEditingTaskTitle(true); setTempTaskTitle(selectedTask.title) }}
+                                            className="p-1 text-midnight-600 hover:text-violet-400 opacity-0 group-hover/title:opacity-100 transition-opacity">
+                                            <Edit2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                )}
                                 <p className="text-xs text-midnight-600 mt-1">
                                     {COLUMNS.find(c => c.key === selectedTask.status)?.label}
                                 </p>
@@ -897,9 +1005,41 @@ export default function ProjectDetailPage() {
                                                     : <Square className="w-4 h-4 text-midnight-600 hover:text-violet-400 transition-colors" />
                                                 }
                                             </button>
-                                            <span className={`text-sm flex-1 ${item.completed ? 'line-through text-midnight-600' : 'text-white'}`}>
-                                                {item.title}
-                                            </span>
+
+                                            {editingChecklistId === item.id ? (
+                                                <div className="flex-1 flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={tempChecklistTitle}
+                                                        onChange={(e) => setTempChecklistTitle(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                handleUpdateChecklist(item.id, { title: tempChecklistTitle })
+                                                                setEditingChecklistId(null)
+                                                            }
+                                                            if (e.key === 'Escape') setEditingChecklistId(null)
+                                                        }}
+                                                        className="flex-1 bg-white/[0.04] border border-violet-500/30 rounded px-2 py-0.5 text-sm text-white focus:outline-none"
+                                                        autoFocus
+                                                    />
+                                                    <button onClick={() => {
+                                                        handleUpdateChecklist(item.id, { title: tempChecklistTitle })
+                                                        setEditingChecklistId(null)
+                                                    }} className="text-emerald-400 hover:text-emerald-300">
+                                                        <Check className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <span className={`text-sm flex-1 cursor-pointer ${item.completed ? 'line-through text-midnight-600' : 'text-white'}`}
+                                                    onClick={() => { setEditingChecklistId(item.id); setTempChecklistTitle(item.title) }}>
+                                                    {item.title}
+                                                </span>
+                                            )}
+
+                                            <button onClick={() => { setEditingChecklistId(item.id); setTempChecklistTitle(item.title) }}
+                                                className="p-0.5 text-midnight-700 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-all">
+                                                <Edit2 className="w-3 h-3" />
+                                            </button>
                                             <button onClick={() => handleDeleteChecklist(item.id)} className="p-0.5 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
                                                 <Trash2 className="w-3 h-3" />
                                             </button>
@@ -960,23 +1100,64 @@ export default function ProjectDetailPage() {
                         </div>
 
                         {/* List */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 mt-2">
                             {categories.length === 0 && (
                                 <p className="text-sm text-midnight-600 text-center py-4">No categories yet</p>
                             )}
                             {categories.map(cat => (
-                                <div key={cat.id} className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/[0.04] rounded-lg">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                                        <span className="text-sm text-white font-medium">{cat.name}</span>
-                                        <span className="text-[10px] text-midnight-600">{tasks.filter(t => t.category_id === cat.id).length} tasks</span>
-                                    </div>
-                                    <button onClick={async () => {
-                                        if (!confirm(`ต้องการลบ category "${cat.name}" จริงหรือไม่?`)) return
-                                        await fetch(`/api/projects/categories?id=${cat.id}`, { method: 'DELETE' })
-                                        setCategories(prev => prev.filter(c => c.id !== cat.id))
-                                        if (filterCategory === cat.id) setFilterCategory(null)
-                                    }} className="p-1 text-midnight-700 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                                <div key={cat.id} className="group">
+                                    {editingCategory?.id === cat.id ? (
+                                        <div className="flex gap-2 p-2 bg-white/[0.05] border border-violet-500/30 rounded-lg">
+                                            <input type="color" value={editingCategory.color} onChange={(e) => setEditingCategory({ ...editingCategory, color: e.target.value })}
+                                                className="w-8 h-8 rounded cursor-pointer bg-transparent border border-white/[0.06]" />
+                                            <input type="text" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                                                autoFocus
+                                                onKeyDown={async (e) => {
+                                                    if (e.key === 'Enter') {
+                                                        const res = await fetch('/api/projects/categories', {
+                                                            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ id: cat.id, name: editingCategory.name.trim(), color: editingCategory.color })
+                                                        })
+                                                        const data = await res.json()
+                                                        if (data.category) {
+                                                            setCategories(prev => prev.map(c => c.id === cat.id ? data.category : c))
+                                                            setEditingCategory(null)
+                                                        }
+                                                    }
+                                                    if (e.key === 'Escape') setEditingCategory(null)
+                                                }}
+                                                className="flex-1 px-2 py-1 bg-white/[0.04] border border-white/[0.06] rounded text-white text-sm focus:outline-none focus:border-violet-500/40" />
+                                            <button onClick={async () => {
+                                                const res = await fetch('/api/projects/categories', {
+                                                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ id: cat.id, name: editingCategory.name.trim(), color: editingCategory.color })
+                                                })
+                                                const data = await res.json()
+                                                if (data.category) {
+                                                    setCategories(prev => prev.map(c => c.id === cat.id ? data.category : c))
+                                                    setEditingCategory(null)
+                                                }
+                                            }} className="p-1 text-emerald-400 hover:text-emerald-300"><Check className="w-4 h-4" /></button>
+                                            <button onClick={() => setEditingCategory(null)} className="p-1 text-midnight-500 hover:text-white"><X className="w-4 h-4" /></button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/[0.04] rounded-lg hover:border-white/10 transition-colors">
+                                            <div className="flex items-center gap-2 cursor-pointer flex-1" onClick={() => setEditingCategory(cat)}>
+                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
+                                                <span className="text-sm text-white font-medium">{cat.name}</span>
+                                                <span className="text-[10px] text-midnight-600">{tasks.filter(t => t.category_id === cat.id).length} tasks</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <button onClick={() => setEditingCategory(cat)} className="p-1 text-midnight-700 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity"><Edit2 className="w-3.5 h-3.5" /></button>
+                                                <button onClick={async () => {
+                                                    if (!confirm(`ต้องการลบ category "${cat.name}" จริงหรือไม่?`)) return
+                                                    await fetch(`/api/projects/categories?id=${cat.id}`, { method: 'DELETE' })
+                                                    setCategories(prev => prev.filter(c => c.id !== cat.id))
+                                                    if (filterCategory === cat.id) setFilterCategory(null)
+                                                }} className="p-1 text-midnight-700 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

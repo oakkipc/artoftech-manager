@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Sidebar } from '@/components/Sidebar'
+import { useSidebar } from '@/context/SidebarContext'
 import {
   User,
   Mail,
@@ -92,6 +93,8 @@ export default function ProfilePage() {
     return map[role] || 'bg-slate-500/10 text-slate-400 border-slate-500/20'
   }
 
+  const { isCollapsed } = useSidebar()
+
   if (loading) {
     return (
       <div className="min-h-screen bg-midnight-950 flex items-center justify-center">
@@ -104,7 +107,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-midnight-950 flex">
       <Sidebar />
 
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 transition-all duration-300">
         {/* Top bar */}
         <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-8 py-4">
           <h1 className="text-xl font-bold text-white">Account Settings</h1>

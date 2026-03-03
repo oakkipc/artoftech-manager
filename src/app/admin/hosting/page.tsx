@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/Sidebar'
+import { useSidebar } from '@/context/SidebarContext'
 import {
     Server,
     Globe,
@@ -167,14 +168,20 @@ export default function HostingPage() {
         } catch { fetchData() }
     }
 
+    const { isCollapsed } = useSidebar()
+
     if (loading) {
-        return (<div className="min-h-screen bg-midnight-950 flex items-center justify-center"><div className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" /></div>)
+        return (
+            <div className="min-h-screen bg-midnight-950 flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+            </div>
+        )
     }
 
     return (
         <div className="min-h-screen bg-midnight-950 flex">
             <Sidebar />
-            <main className="flex-1 min-w-0">
+            <main className="flex-1 min-w-0 transition-all duration-300">
                 {/* Top bar */}
                 <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-8 py-4">
                     <div className="flex items-center justify-between">

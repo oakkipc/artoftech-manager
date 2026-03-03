@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/Sidebar'
+import { useSidebar } from '@/context/SidebarContext'
 import {
   FolderPlus,
   Search,
@@ -195,7 +196,7 @@ export default function AdminProjectsPage() {
     <div className="min-h-screen bg-midnight-950 flex">
       <Sidebar />
 
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 transition-all duration-300">
         {/* Top bar */}
         <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-4 sm:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -63,3 +63,28 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }
 }
+
+// PATCH: Update a category
+export async function PATCH(request: Request) {
+    try {
+        const { id, name, color } = await request.json()
+        if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+        const supabase = getAdminClient()
+        const updateData: any = {}
+        if (name !== undefined) updateData.name = name.trim()
+        if (color !== undefined) updateData.color = color
+
+        const { data, error } = await supabase
+            .from('task_categories')
+            .update(updateData)
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ category: data })
+    } catch {
+        return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    }
+}
