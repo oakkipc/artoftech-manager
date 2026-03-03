@@ -15,7 +15,8 @@ import {
   Plus,
   Pin,
   PinOff,
-  ArrowRight
+  ArrowRight,
+  Building2
 } from 'lucide-react'
 
 interface Project {
@@ -25,6 +26,13 @@ interface Project {
   status: string
   pinned: boolean
   created_at: string
+  client_id?: string
+  clients?: { name: string }
+}
+
+interface Client {
+  id: string
+  name: string
 }
 
 interface User {
@@ -45,13 +53,14 @@ export default function AdminProjectsPage() {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showUserModal, setShowUserModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [projectUsers, setProjectUsers] = useState<UserProject[]>([])
-  const [newProject, setNewProject] = useState({ name: '', description: '' })
+  const [newProject, setNewProject] = useState({ name: '', description: '', clientId: '' })
   const [assignUser, setAssignUser] = useState({ userId: '', role: 'VIEWER' })
   const [searchQuery, setSearchQuery] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -72,14 +81,17 @@ export default function AdminProjectsPage() {
 
   const fetchData = async () => {
     try {
-      const [projectsRes, usersRes] = await Promise.all([
+      const [projectsRes, usersRes, clientsRes] = await Promise.all([
         fetch('/api/admin/projects'),
-        fetch('/api/admin/users')
+        fetch('/api/admin/users'),
+        fetch('/api/clients')
       ])
       const projectsData = await projectsRes.json()
       const usersData = await usersRes.json()
+      const clientsData = await clientsRes.json()
       if (projectsData.projects) setProjects(projectsData.projects)
       if (usersData.users) setUsers(usersData.users)
+      if (clientsData.clients) setClients(clientsData.clients)
     } catch (err) {
       console.error(err)
     } finally {
@@ -105,11 +117,16 @@ export default function AdminProjectsPage() {
       const res = await fetch('/api/admin/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newProject.name, description: newProject.description, ownerId: currentUser?.id })
+        body: JSON.stringify({
+          name: newProject.name,
+          description: newProject.description,
+          ownerId: currentUser?.id,
+          clientId: newProject.clientId || null
+        })
       })
       if (res.ok) {
         setShowCreateModal(false)
-        setNewProject({ name: '', description: '' })
+        setNewProject({ name: '', description: '', clientId: '' })
         fetchData()
       }
     } catch (err) { console.error(err) }
@@ -251,6 +268,14 @@ export default function AdminProjectsPage() {
                     </span>
                   </div>
                 </div>
+                <div className="mb-1">
+                  {project.clients?.name && (
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">
+                      <Building2 className="w-2.5 h-2.5" />
+                      {project.clients.name}
+                    </div>
+                  )}
+                </div>
                 <h3
                   onClick={() => router.push(`/projects/${project.id}`)}
                   className="text-base font-bold text-white mb-1 flex items-center gap-2 cursor-pointer hover:text-violet-400 transition-colors"
@@ -325,6 +350,19 @@ export default function AdminProjectsPage() {
                   className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-600 h-24 resize-none focus:outline-none focus:border-violet-500/40"
                   placeholder="Brief description..."
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-midnight-300 mb-1.5">Client (Optional)</label>
+                <select
+                  value={newProject.clientId}
+                  onChange={(e) => setNewProject({ ...newProject, clientId: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 appearance-none cursor-pointer"
+                >
+                  <option value="" className="bg-[#0f0f23]">No client</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id} className="bg-[#0f0f23]">{c.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-midnight-400 border border-white/[0.08] rounded-lg hover:bg-white/[0.04]">Cancel</button>

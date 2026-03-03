@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('projects')
-      .select('*')
+      .select('*, clients(name)')
       .order('created_at', { ascending: false })
 
     if (id) query = query.eq('id', id)
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { name, description, ownerId } = await request.json()
+    const { name, description, ownerId, clientId } = await request.json()
 
     if (!name) {
       return NextResponse.json({ error: 'กรุณากรอกชื่อโปรเจค' }, { status: 400 })
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from('projects')
-      .insert({ name, description, status: 'ACTIVE' })
+      .insert({ name, description, status: 'ACTIVE', client_id: clientId || null })
       .select()
       .single()
 

@@ -21,7 +21,8 @@ import {
     Loader2,
     ChevronLeft,
     ChevronRight,
-    Users
+    Users,
+    Building2
 } from 'lucide-react'
 
 interface Transaction {
@@ -32,9 +33,11 @@ interface Transaction {
     type: 'INCOME' | 'EXPENSE'
     description: string
     date: string
+    frequency: 'ONCE' | 'MONTHLY' | 'YEARLY'
     created_at: string
     projects: { name: string }
     vendors?: { name: string } | null
+    clients?: { name: string } | null
 }
 
 interface Project {
@@ -48,6 +51,7 @@ export default function BudgetPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [projects, setProjects] = useState<Project[]>([])
     const [vendors, setVendors] = useState<any[]>([])
+    const [clients, setClients] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [showModal, setShowModal] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -57,6 +61,7 @@ export default function BudgetPage() {
     // Filters
     const [filterProject, setFilterProject] = useState('')
     const [filterVendor, setFilterVendor] = useState('')
+    const [filterClient, setFilterClient] = useState('')
     const [filterType, setFilterType] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -64,6 +69,8 @@ export default function BudgetPage() {
     const [formData, setFormData] = useState({
         projectId: '',
         vendorId: '',
+        clientId: '',
+        frequency: 'ONCE',
         amount: '',
         type: 'EXPENSE',
         description: '',
@@ -75,24 +82,29 @@ export default function BudgetPage() {
         if (!userStr) { router.push('/login'); return }
         const urlParams = new URLSearchParams(window.location.search)
         const vId = urlParams.get('vendorId')
+        const cId = urlParams.get('clientId')
         if (vId) setFilterVendor(vId)
+        if (cId) setFilterClient(cId)
         fetchInitialData()
     }, [])
 
     const fetchInitialData = async () => {
         setLoading(true)
         try {
-            const [transRes, projRes, vendorRes] = await Promise.all([
+            const [transRes, projRes, vendorRes, clientRes] = await Promise.all([
                 fetch('/api/budgets'),
                 fetch('/api/admin/projects'),
-                fetch('/api/vendors')
+                fetch('/api/vendors'),
+                fetch('/api/clients')
             ])
             const transData = await transRes.json()
             const projData = await projRes.json()
             const vendorData = await vendorRes.json()
+            const clientData = await clientRes.json()
             if (transData.transactions) setTransactions(transData.transactions)
             if (projData.projects) setProjects(projData.projects)
             if (vendorData.vendors) setVendors(vendorData.vendors)
+            if (clientData.clients) setClients(clientData.clients)
         } catch (err) {
             console.error(err)
         } finally {
@@ -114,6 +126,7 @@ export default function BudgetPage() {
                 setShowModal(false)
                 setFormData({
                     ...formData,
+                    frequency: 'ONCE',
                     amount: '',
                     description: '',
                     date: new Date().toISOString().split('T')[0]
@@ -138,12 +151,14 @@ export default function BudgetPage() {
     const filteredTransactions = transactions.filter(t => {
         const matchProject = !filterProject || t.project_id === filterProject
         const matchVendor = !filterVendor || t.vendor_id === filterVendor
+        const matchClient = !filterClient || (t as any).client_id === filterClient
         const matchType = !filterType || t.type === filterType
         const matchSearch = !searchQuery ||
             t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             t.projects?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            t.vendors?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-        return matchProject && matchVendor && matchType && matchSearch
+            t.vendors?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t.clients?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        return matchProject && matchVendor && matchClient && matchType && matchSearch
     })
 
     const totalIncome = filteredTransactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount), 0)
@@ -305,6 +320,19 @@ export default function BudgetPage() {
                                 </select>
                             </div>
                             <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-xs">
+                                <Building2 className="w-3.5 h-3.5 text-midnight-600" />
+                                <select
+                                    value={filterClient}
+                                    onChange={(e) => setFilterClient(e.target.value)}
+                                    className="bg-transparent text-midnight-300 focus:outline-none"
+                                >
+                                    <option value="">All Clients</option>
+                                    {clients.map(c => (
+                                        <option key={c.id} value={c.id} className="bg-[#0f0f23]">{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-xs">
                                 <Filter className="w-3.5 h-3.5 text-midnight-600" />
                                 <select
                                     value={filterType}
@@ -354,6 +382,18 @@ export default function BudgetPage() {
                                                             <div className="flex items-center gap-2 ml-4">
                                                                 <Users className="w-3 h-3 text-midnight-600" />
                                                                 <span className="text-[10px] text-midnight-500">{t.vendors.name}</span>
+                                                            </div>
+                                                        )}
+                                                        {t.clients?.name && (
+                                                            <div className="flex items-center gap-2 ml-4">
+                                                                <Building2 className="w-3 h-3 text-emerald-500/60" />
+                                                                <span className="text-[10px] text-emerald-500/60 font-medium uppercase tracking-wider">{t.clients.name}</span>
+                                                            </div>
+                                                        )}
+                                                        {t.frequency && t.frequency !== 'ONCE' && (
+                                                            <div className="flex items-center gap-2 ml-4">
+                                                                <Calendar className="w-3 h-3 text-violet-500/60" />
+                                                                <span className="text-[10px] text-violet-500/60 font-bold uppercase tracking-wider">{t.frequency}</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -431,115 +471,149 @@ export default function BudgetPage() {
                         </div>
                     )}
                 </div>
-            </main>
+            </main >
 
             {/* Add Transaction Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Plus className="w-5 h-5 text-violet-400" /> Add Transaction
-                            </h3>
-                            <button onClick={() => setShowModal(false)} className="p-1 text-midnight-500 hover:text-white transition-colors">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleAddTransaction} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, type: 'INCOME' })}
-                                    className={`py-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${formData.type === 'INCOME' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-white/[0.02] border-white/[0.08] text-midnight-500 hover:border-emerald-500/30'}`}
-                                >
-                                    <TrendingUp className="w-5 h-5" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">Income</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, type: 'EXPENSE' })}
-                                    className={`py-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${formData.type === 'EXPENSE' ? 'bg-red-500/10 border-red-500 text-red-400' : 'bg-white/[0.02] border-white/[0.08] text-midnight-500 hover:border-red-500/30'}`}
-                                >
-                                    <TrendingDown className="w-5 h-5" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">Expense</span>
+            {
+                showModal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                    <Plus className="w-5 h-5 text-violet-400" /> Add Transaction
+                                </h3>
+                                <button onClick={() => setShowModal(false)} className="p-1 text-midnight-500 hover:text-white transition-colors">
+                                    <X className="w-5 h-5" />
                                 </button>
                             </div>
 
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Project</label>
-                                    <select
-                                        required
-                                        value={formData.projectId}
-                                        onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
+                            <form onSubmit={handleAddTransaction} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, type: 'INCOME' })}
+                                        className={`py-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${formData.type === 'INCOME' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-white/[0.02] border-white/[0.08] text-midnight-500 hover:border-emerald-500/30'}`}
                                     >
-                                        <option value="" className="bg-[#0f0f23]">Select Project</option>
-                                        {projects.map(p => (
-                                            <option key={p.id} value={p.id} className="bg-[#0f0f23]">{p.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Vendor / Supplier (Optional)</label>
-                                    <select
-                                        value={formData.vendorId}
-                                        onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
+                                        <TrendingUp className="w-5 h-5" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">Income</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, type: 'EXPENSE' })}
+                                        className={`py-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${formData.type === 'EXPENSE' ? 'bg-red-500/10 border-red-500 text-red-400' : 'bg-white/[0.02] border-white/[0.08] text-midnight-500 hover:border-red-500/30'}`}
                                     >
-                                        <option value="" className="bg-[#0f0f23]">No Vendor</option>
-                                        {vendors.map(v => (
-                                            <option key={v.id} value={v.id} className="bg-[#0f0f23]">{v.name}</option>
-                                        ))}
-                                    </select>
+                                        <TrendingDown className="w-5 h-5" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">Expense</span>
+                                    </button>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
+
+                                <div className="space-y-3">
                                     <div>
-                                        <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Amount</label>
-                                        <input
-                                            type="number"
+                                        <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Project</label>
+                                        <select
                                             required
-                                            value={formData.amount}
-                                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                            placeholder="0.00"
+                                            value={formData.projectId}
+                                            onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
+                                        >
+                                            <option value="" className="bg-[#0f0f23]">Select Project</option>
+                                            {projects.map(p => (
+                                                <option key={p.id} value={p.id} className="bg-[#0f0f23]">{p.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Vendor / Supplier (Optional)</label>
+                                        <select
+                                            value={formData.vendorId}
+                                            onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
+                                        >
+                                            <option value="" className="bg-[#0f0f23]">No Vendor</option>
+                                            {vendors.map(v => (
+                                                <option key={v.id} value={v.id} className="bg-[#0f0f23]">{v.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Client (Optional)</label>
+                                        <select
+                                            value={formData.clientId}
+                                            onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
+                                        >
+                                            <option value="" className="bg-[#0f0f23]">No Client</option>
+                                            {clients.map(c => (
+                                                <option key={c.id} value={c.id} className="bg-[#0f0f23]">{c.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Payment Frequency</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {[
+                                                { id: 'ONCE', label: 'One-time' },
+                                                { id: 'MONTHLY', label: 'Monthly' },
+                                                { id: 'YEARLY', label: 'Yearly' }
+                                            ].map(freq => (
+                                                <button
+                                                    key={freq.id}
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, frequency: freq.id as any })}
+                                                    className={`py-2 px-1 rounded-lg border text-[10px] font-bold uppercase transition-all ${formData.frequency === freq.id ? 'bg-violet-500/10 border-violet-500 text-violet-400' : 'bg-white/[0.02] border-white/[0.08] text-midnight-500 hover:border-white/20'}`}
+                                                >
+                                                    {freq.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Amount</label>
+                                            <input
+                                                type="number"
+                                                required
+                                                value={formData.amount}
+                                                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                                placeholder="0.00"
+                                                className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Date</label>
+                                            <input
+                                                type="date"
+                                                required
+                                                value={formData.date}
+                                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Description</label>
+                                        <input
+                                            type="text"
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                            placeholder="Note for this transaction..."
                                             className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Date</label>
-                                        <input
-                                            type="date"
-                                            required
-                                            value={formData.date}
-                                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]"
-                                        />
-                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Description</label>
-                                    <input
-                                        type="text"
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        placeholder="Note for this transaction..."
-                                        className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
-                                    />
-                                </div>
-                            </div>
 
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-violet-600/20 active:scale-[0.98] disabled:opacity-50 mt-4 text-sm"
-                            >
-                                {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm Transaction'}
-                            </button>
-                        </form>
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-violet-600/20 active:scale-[0.98] disabled:opacity-50 mt-4 text-sm"
+                                >
+                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm Transaction'}
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }

@@ -14,18 +14,20 @@ export async function GET(request: Request) {
     const type = searchParams.get('type') // INCOME or EXPENSE
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+    const clientId = searchParams.get('clientId')
 
     try {
         const supabase = getAdminClient()
         let query = supabase
             .from('project_budgets')
-            .select('*, projects(name), vendors(name)')
+            .select('*, projects(name), vendors(name), clients(name)')
             .order('date', { ascending: false })
 
         if (projectId) query = query.eq('project_id', projectId)
         if (type) query = query.eq('type', type)
         if (startDate) query = query.gte('date', startDate)
         if (endDate) query = query.lte('date', endDate)
+        if (clientId) query = query.eq('client_id', clientId)
 
         const { data, error } = await query
 
@@ -39,7 +41,7 @@ export async function GET(request: Request) {
 // POST: Add a budget transaction
 export async function POST(request: Request) {
     try {
-        const { projectId, amount, type, description, date, vendorId } = await request.json()
+        const { projectId, amount, type, description, date, vendorId, clientId, frequency } = await request.json()
 
         if (!projectId || !amount || !type || !date) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -54,7 +56,9 @@ export async function POST(request: Request) {
                 type,
                 description,
                 date,
-                vendor_id: vendorId || null
+                vendor_id: vendorId || null,
+                client_id: clientId || null,
+                frequency: frequency || 'ONCE'
             })
             .select()
             .single()

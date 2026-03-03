@@ -18,7 +18,8 @@ import {
     Server,
     ChevronLeft,
     ChevronRight,
-    Wallet
+    Wallet,
+    Building2
 } from 'lucide-react'
 
 const navItems = [
@@ -36,6 +37,7 @@ const navItems = [
             { name: 'Host & Domain', href: '/admin/hosting', icon: Server },
             { name: 'Budget', href: '/budget', icon: Wallet },
             { name: 'Vendors', href: '/admin/vendors', icon: Users },
+            { name: 'Clients', href: '/admin/clients', icon: Building2 },
         ]
     },
     {
