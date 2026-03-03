@@ -267,7 +267,7 @@ export default function BudgetPage() {
                 {/* Top bar */}
                 <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-4 sm:px-8 py-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
+                        <div className="pl-12 lg:pl-0">
                             <h1 className="text-xl font-bold text-white">Budget & Cashflow</h1>
                             <p className="text-sm text-midnight-500">Track income and expenses across all projects</p>
                         </div>
@@ -297,7 +297,7 @@ export default function BudgetPage() {
                 <div className="p-4 sm:p-8 space-y-8">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 relative overflow-hidden group">
+                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 relative overflow-hidden group pl-12 lg:pl-6">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
                                 <Wallet className="w-16 h-16 text-white" />
                             </div>
@@ -310,9 +310,9 @@ export default function BudgetPage() {
                             </div>
                         </div>
 
-                        <div className="bg-emerald-500/[0.02] border border-emerald-500/10 rounded-2xl p-6 relative overflow-hidden group">
+                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 relative overflow-hidden group pl-12 lg:pl-6">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                                <TrendingUp className="w-16 h-16 text-emerald-400" />
+                                <TrendingUp className="w-16 h-16 text-emerald-500" />
                             </div>
                             <p className="text-xs font-bold text-emerald-500/60 uppercase tracking-wider mb-1">Total Income</p>
                             <h3 className="text-2xl font-bold text-emerald-400">
@@ -324,9 +324,9 @@ export default function BudgetPage() {
                             </div>
                         </div>
 
-                        <div className="bg-red-500/[0.02] border border-red-500/10 rounded-2xl p-6 relative overflow-hidden group">
+                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 relative overflow-hidden group pl-12 lg:pl-6">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                                <TrendingDown className="w-16 h-16 text-red-400" />
+                                <TrendingDown className="w-16 h-16 text-red-500" />
                             </div>
                             <p className="text-xs font-bold text-red-500/60 uppercase tracking-wider mb-1">Total Expenses</p>
                             <h3 className="text-2xl font-bold text-red-400">
@@ -697,10 +697,10 @@ export default function BudgetPage() {
 
                                 <button
                                     type="submit"
-                                    disabled={submitting}
-                                    className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-violet-600/20 active:scale-[0.98] disabled:opacity-50 mt-4 text-sm"
+                                    disabled={!formData.projectId || !formData.amount || !formData.date || submitting}
+                                    className="w-full py-3 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg shadow-violet-600/20"
                                 >
-                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : editingId ? 'Update Transaction' : 'Confirm Transaction'}
+                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : editingId ? 'Update Transaction' : 'Add Transaction'}
                                 </button>
                             </form>
                         </div>

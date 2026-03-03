@@ -446,13 +446,13 @@ export default function ProjectDetailPage() {
                             <Link href="/dashboard" className="hidden sm:flex p-1.5 text-midnight-500 hover:text-white rounded-lg hover:bg-white/[0.04] transition-all">
                                 <ArrowLeft className="w-5 h-5" />
                             </Link>
-                            <div className="pl-12 sm:pl-0">
+                            <div className="pl-12 lg:pl-0">
                                 <h1 className="text-xl font-bold text-white truncate max-w-[200px] sm:max-w-none">{project?.name || 'Project'}</h1>
                                 <p className="text-sm text-midnight-500 truncate max-w-[250px] sm:max-w-none">{project?.description || 'Kanban Board'}</p>
                             </div>
                         </div>
                         {members.length > 0 && (
-                            <div className="flex items-center gap-3 pl-12 sm:pl-0">
+                            <div className="flex items-center gap-3 pl-12 lg:pl-0">
                                 <span className="text-[11px] font-bold text-midnight-600 uppercase tracking-wider hidden xs:block">Team</span>
                                 <div className="flex items-center -space-x-2">
                                     {members.slice(0, 5).map((m) => (
@@ -469,284 +469,289 @@ export default function ProjectDetailPage() {
                     </div>
                 </div>
 
-                {/* Kanban Board */}
                 <div className="flex-1 p-6 overflow-x-auto">
                     {/* Project Overview Mini-Dashboard */}
-                    {(() => {
-                        const total = tasks.length
-                        const todo = tasks.filter(t => t.status === 'TODO').length
-                        const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length
-                        const done = tasks.filter(t => t.status === 'DONE').length
-                        const now = new Date()
-                        const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'DONE').length
-                        const completion = total > 0 ? Math.round((done / total) * 100) : 0
+                    {
+                        (() => {
+                            const total = tasks.length
+                            const todo = tasks.filter(t => t.status === 'TODO').length
+                            const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length
+                            const done = tasks.filter(t => t.status === 'DONE').length
+                            const now = new Date()
+                            const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'DONE').length
+                            const completion = total > 0 ? Math.round((done / total) * 100) : 0
 
-                        return (
-                            <div className="mb-5 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
-                                    <div className="w-8 h-8 bg-cyan-500/10 rounded-lg flex items-center justify-center shrink-0">
-                                        <ListTodo className="w-4 h-4 text-cyan-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-lg font-bold text-white leading-none">{total}</p>
-                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Total</p>
-                                    </div>
-                                </div>
-                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
-                                    <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0">
-                                        <ListTodo className="w-4 h-4 text-blue-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-lg font-bold text-white leading-none">{todo}</p>
-                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">To Do</p>
-                                    </div>
-                                </div>
-                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
-                                    <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center shrink-0">
-                                        <Clock className="w-4 h-4 text-amber-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-lg font-bold text-white leading-none">{inProgress}</p>
-                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Active</p>
-                                    </div>
-                                </div>
-                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
-                                    <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shrink-0">
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-lg font-bold text-white leading-none">{done}</p>
-                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Done</p>
-                                    </div>
-                                </div>
-                                {overdue > 0 && (
-                                    <div className="bg-white/[0.02] border border-red-500/20 rounded-xl p-3 flex items-center gap-2.5">
-                                        <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center shrink-0">
-                                            <AlertTriangle className="w-4 h-4 text-red-400" />
+                            return (
+                                <div className="mb-5 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3 pl-12 lg:pl-0">
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                        <div className="w-8 h-8 bg-cyan-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                            <ListTodo className="w-4 h-4 text-cyan-400" />
                                         </div>
                                         <div>
-                                            <p className="text-lg font-bold text-white leading-none">{overdue}</p>
-                                            <p className="text-[10px] text-midnight-600 font-medium uppercase">Overdue</p>
+                                            <p className="text-lg font-bold text-white leading-none">{total}</p>
+                                            <p className="text-[10px] text-midnight-600 font-medium uppercase">Total</p>
                                         </div>
                                     </div>
-                                )}
-                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
-                                    <div className="w-8 h-8 bg-violet-500/10 rounded-lg flex items-center justify-center shrink-0">
-                                        <Users className="w-4 h-4 text-violet-400" />
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                        <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                            <ListTodo className="w-4 h-4 text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-lg font-bold text-white leading-none">{todo}</p>
+                                            <p className="text-[10px] text-midnight-600 font-medium uppercase">To Do</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-lg font-bold text-white leading-none">{members.length}</p>
-                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Members</p>
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                        <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                            <Clock className="w-4 h-4 text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-lg font-bold text-white leading-none">{inProgress}</p>
+                                            <p className="text-[10px] text-midnight-600 font-medium uppercase">Active</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                        <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-lg font-bold text-white leading-none">{done}</p>
+                                            <p className="text-[10px] text-midnight-600 font-medium uppercase">Done</p>
+                                        </div>
+                                    </div>
+                                    {overdue > 0 && (
+                                        <div className="bg-white/[0.02] border border-red-500/20 rounded-xl p-3 flex items-center gap-2.5">
+                                            <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                                <AlertTriangle className="w-4 h-4 text-red-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-lg font-bold text-white leading-none">{overdue}</p>
+                                                <p className="text-[10px] text-midnight-600 font-medium uppercase">Overdue</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
+                                        <div className="w-8 h-8 bg-violet-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                            <Users className="w-4 h-4 text-violet-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-lg font-bold text-white leading-none">{members.length}</p>
+                                            <p className="text-[10px] text-midnight-600 font-medium uppercase">Members</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <p className="text-[10px] text-midnight-600 font-medium uppercase">Budget</p>
+                                            <Wallet className="w-3 h-3 text-violet-400" />
+                                        </div>
+                                        <div className="flex items-baseline gap-1.5">
+                                            <p className="text-lg font-bold text-white leading-none">
+                                                ฿{(budgetTransactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount), 0) -
+                                                    budgetTransactions.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount), 0)).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <p className="text-[10px] text-midnight-600 font-medium uppercase">Progress</p>
+                                            <p className="text-sm font-bold text-white">{completion}%</p>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                                            <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500" style={{ width: `${completion}%` }} />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Budget</p>
-                                        <Wallet className="w-3 h-3 text-violet-400" />
-                                    </div>
-                                    <div className="flex items-baseline gap-1.5">
-                                        <p className="text-lg font-bold text-white leading-none">
-                                            ฿{(budgetTransactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount), 0) -
-                                                budgetTransactions.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount), 0)).toLocaleString()}
-                                        </p>
-                                    </div>
+                            )
+                        })()
+                    }
+
+                    {/* Budget Quick List */}
+                    {
+                        budgetTransactions.length > 0 && (
+                            <div className="mb-6 bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden">
+                                <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between">
+                                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                                        <Wallet className="w-3.5 h-3.5 text-violet-400" /> Project Budget
+                                    </h3>
+                                    <Link href="/budget" className="text-[10px] font-bold text-violet-400 hover:text-violet-300 uppercase tracking-wider">View All</Link>
                                 </div>
-                                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <p className="text-[10px] text-midnight-600 font-medium uppercase">Progress</p>
-                                        <p className="text-sm font-bold text-white">{completion}%</p>
-                                    </div>
-                                    <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-                                        <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500" style={{ width: `${completion}%` }} />
-                                    </div>
+                                <div className="p-2 space-y-1">
+                                    {budgetTransactions.slice(0, 3).map(t => (
+                                        <div key={t.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-1.5 rounded-md ${t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                    {t.type === 'INCOME' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-white font-medium">{t.description || 'No description'}</p>
+                                                    <p className="text-[10px] text-midnight-600">{new Date(t.date).toLocaleDateString('th-TH')}</p>
+                                                </div>
+                                            </div>
+                                            <span className={`text-xs font-bold ${t.type === 'INCOME' ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                {t.type === 'INCOME' ? '+' : '-'}฿{Number(t.amount).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )
-                    })()}
-
-                    {/* Budget Quick List */}
-                    {budgetTransactions.length > 0 && (
-                        <div className="mb-6 bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden">
-                            <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between">
-                                <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                                    <Wallet className="w-3.5 h-3.5 text-violet-400" /> Project Budget
-                                </h3>
-                                <Link href="/budget" className="text-[10px] font-bold text-violet-400 hover:text-violet-300 uppercase tracking-wider">View All</Link>
-                            </div>
-                            <div className="p-2 space-y-1">
-                                {budgetTransactions.slice(0, 3).map(t => (
-                                    <div key={t.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-1.5 rounded-md ${t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                                                {t.type === 'INCOME' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-white font-medium">{t.description || 'No description'}</p>
-                                                <p className="text-[10px] text-midnight-600">{new Date(t.date).toLocaleDateString('th-TH')}</p>
-                                            </div>
-                                        </div>
-                                        <span className={`text-xs font-bold ${t.type === 'INCOME' ? 'text-emerald-400' : 'text-red-400'}`}>
-                                            {t.type === 'INCOME' ? '+' : '-'}฿{Number(t.amount).toLocaleString()}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    }
 
                     {/* Dashboard Charts Section */}
-                    {tasks.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                            {/* Donut 1: Checklist by Category (Remaining) */}
-                            {categories.length > 0 && (() => {
-                                const catData = categories.map(cat => {
-                                    const catTaskIds = tasks.filter(t => t.category_id === cat.id).map(t => t.id)
-                                    const catChecklists = allChecklists.filter(c => catTaskIds.includes(c.task_id))
-                                    const remaining = catChecklists.filter(c => !c.completed).length
-                                    const total = catChecklists.length
-                                    return { name: cat.name, color: cat.color, remaining, total, taskCount: catTaskIds.length }
-                                }).filter(d => d.taskCount > 0)
+                    {
+                        tasks.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                {/* Donut 1: Checklist by Category (Remaining) */}
+                                {categories.length > 0 && (() => {
+                                    const catData = categories.map(cat => {
+                                        const catTaskIds = tasks.filter(t => t.category_id === cat.id).map(t => t.id)
+                                        const catChecklists = allChecklists.filter(c => catTaskIds.includes(c.task_id))
+                                        const remaining = catChecklists.filter(c => !c.completed).length
+                                        const total = catChecklists.length
+                                        return { name: cat.name, color: cat.color, remaining, total, taskCount: catTaskIds.length }
+                                    }).filter(d => d.taskCount > 0)
 
-                                const uncatTaskIds = tasks.filter(t => !t.category_id).map(t => t.id)
-                                if (uncatTaskIds.length > 0) {
-                                    const uncatChecklists = allChecklists.filter(c => uncatTaskIds.includes(c.task_id))
-                                    catData.push({ name: 'Uncategorized', color: '#4b5563', remaining: uncatChecklists.filter(c => !c.completed).length, total: uncatChecklists.length, taskCount: uncatTaskIds.length })
-                                }
+                                    const uncatTaskIds = tasks.filter(t => !t.category_id).map(t => t.id)
+                                    if (uncatTaskIds.length > 0) {
+                                        const uncatChecklists = allChecklists.filter(c => uncatTaskIds.includes(c.task_id))
+                                        catData.push({ name: 'Uncategorized', color: '#4b5563', remaining: uncatChecklists.filter(c => !c.completed).length, total: uncatChecklists.length, taskCount: uncatTaskIds.length })
+                                    }
 
-                                const totalRemaining = catData.reduce((s, d) => s + d.remaining, 0)
-                                if (totalRemaining === 0 && allChecklists.length === 0) return null
+                                    const totalRemaining = catData.reduce((s, d) => s + d.remaining, 0)
+                                    if (totalRemaining === 0 && allChecklists.length === 0) return null
 
-                                const radius = 40, cx = 50, cy = 50, circumference = 2 * Math.PI * radius
-                                let offset = 0
+                                    const radius = 40, cx = 50, cy = 50, circumference = 2 * Math.PI * radius
+                                    let offset = 0
 
-                                return (
-                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-col">
-                                        <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-4">Remaining by Category</p>
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="shrink-0">
-                                                <svg width="100" height="100" viewBox="0 0 100 100">
-                                                    {catData.filter(d => d.remaining > 0).map((d, i) => {
-                                                        const pct = d.remaining / totalRemaining
-                                                        const dashLen = pct * circumference
-                                                        const dashOffset = -offset
-                                                        offset += dashLen
-                                                        return (
-                                                            <circle key={i} cx={cx} cy={cy} r={radius} fill="none" stroke={d.color} strokeWidth="12"
-                                                                strokeDasharray={`${dashLen} ${circumference - dashLen}`} strokeDashoffset={dashOffset}
-                                                                transform={`rotate(-90 ${cx} ${cy})`} className="transition-all duration-500" />
-                                                        )
-                                                    })}
-                                                    {totalRemaining === 0 && <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#10b981" strokeWidth="12" opacity="0.3" />}
-                                                    <text x={cx} y={cy - 2} textAnchor="middle" className="fill-white text-base font-bold">{totalRemaining}</text>
-                                                    <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[8px]">remaining</text>
-                                                </svg>
+                                    return (
+                                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-col">
+                                            <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-4">Remaining by Category</p>
+                                            <div className="flex items-center gap-4 flex-1">
+                                                <div className="shrink-0">
+                                                    <svg width="100" height="100" viewBox="0 0 100 100">
+                                                        {catData.filter(d => d.remaining > 0).map((d, i) => {
+                                                            const pct = d.remaining / totalRemaining
+                                                            const dashLen = pct * circumference
+                                                            const dashOffset = -offset
+                                                            offset += dashLen
+                                                            return (
+                                                                <circle key={i} cx={cx} cy={cy} r={radius} fill="none" stroke={d.color} strokeWidth="12"
+                                                                    strokeDasharray={`${dashLen} ${circumference - dashLen}`} strokeDashoffset={dashOffset}
+                                                                    transform={`rotate(-90 ${cx} ${cy})`} className="transition-all duration-500" />
+                                                            )
+                                                        })}
+                                                        {totalRemaining === 0 && <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#10b981" strokeWidth="12" opacity="0.3" />}
+                                                        <text x={cx} y={cy - 2} textAnchor="middle" className="fill-white text-base font-bold">{totalRemaining}</text>
+                                                        <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[8px]">remaining</text>
+                                                    </svg>
+                                                </div>
+                                                <div className="flex-1 space-y-1.5 max-h-[100px] overflow-y-auto custom-scrollbar pr-1">
+                                                    {catData.map((d, i) => (
+                                                        <div key={i} className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                                                            <span className="text-[10px] text-white font-medium truncate flex-1">{d.name}</span>
+                                                            <span className="text-[10px] text-midnight-500">{d.remaining}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                            <div className="flex-1 space-y-1.5 max-h-[100px] overflow-y-auto custom-scrollbar pr-1">
-                                                {catData.map((d, i) => (
+                                        </div>
+                                    )
+                                })()}
+
+                                {/* Donut 2: Overall Checklist Completion */}
+                                {allChecklists.length > 0 && (() => {
+                                    const completed = allChecklists.filter(c => c.completed).length
+                                    const total = allChecklists.length
+                                    const pct = completed / total
+                                    const radius = 40, cx = 50, cy = 50, circumference = 2 * Math.PI * radius
+
+                                    return (
+                                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-col">
+                                            <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-4">Overall Completion</p>
+                                            <div className="flex items-center gap-4 flex-1">
+                                                <div className="shrink-0">
+                                                    <svg width="100" height="100" viewBox="0 0 100 100">
+                                                        <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="12" className="text-white/[0.05]" />
+                                                        <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#8b5cf6" strokeWidth="12"
+                                                            strokeDasharray={`${pct * circumference} ${circumference}`}
+                                                            transform={`rotate(-90 ${cx} ${cy})`} className="transition-all duration-500" strokeLinecap="round" />
+                                                        <text x={cx} y={cy - 2} textAnchor="middle" className="fill-white text-base font-bold">{completed}/{total}</text>
+                                                        <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[8px]">completed</text>
+                                                    </svg>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="bg-white/[0.03] rounded-lg p-2 border border-white/[0.04]">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className="text-[10px] text-midnight-500 font-medium">Progress</span>
+                                                            <span className="text-[10px] text-violet-400 font-bold">{Math.round(pct * 100)}%</span>
+                                                        </div>
+                                                        <div className="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                                                            <div className="h-full bg-violet-500 rounded-full" style={{ width: `${pct * 100}%` }} />
+                                                        </div>
+                                                    </div>
+                                                    <p className="mt-2 text-[9px] text-midnight-600 italic text-center">Total items in all tasks</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })()}
+
+                                {/* Bar Chart: Tasks by Category & Status */}
+                                {categories.length > 0 && (() => {
+                                    const barData = categories.map(cat => {
+                                        const catTasks = tasks.filter(t => t.category_id === cat.id)
+                                        return {
+                                            name: cat.name,
+                                            todo: catTasks.filter(t => t.status === 'TODO').length,
+                                            inprogress: catTasks.filter(t => t.status === 'IN_PROGRESS').length,
+                                            done: catTasks.filter(t => t.status === 'DONE').length,
+                                            total: catTasks.length
+                                        }
+                                    }).filter(d => d.total > 0)
+
+                                    const uncatTasks = tasks.filter(t => !t.category_id)
+                                    if (uncatTasks.length > 0) {
+                                        barData.push({
+                                            name: 'Uncat',
+                                            todo: uncatTasks.filter(t => t.status === 'TODO').length,
+                                            inprogress: uncatTasks.filter(t => t.status === 'IN_PROGRESS').length,
+                                            done: uncatTasks.filter(t => t.status === 'DONE').length,
+                                            total: uncatTasks.length
+                                        })
+                                    }
+
+                                    const max = Math.max(...barData.map(d => d.total), 1)
+
+                                    return (
+                                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-col">
+                                            <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-4">Tasks by Status</p>
+                                            <div className="flex-1 flex flex-col justify-end space-y-2">
+                                                {barData.map((d, i) => (
                                                     <div key={i} className="flex items-center gap-2">
-                                                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                                                        <span className="text-[10px] text-white font-medium truncate flex-1">{d.name}</span>
-                                                        <span className="text-[10px] text-midnight-500">{d.remaining}</span>
+                                                        <span className="text-[9px] text-midnight-400 w-10 truncate text-right shrink-0">{d.name}</span>
+                                                        <div className="flex-1 h-3 flex rounded-sm overflow-hidden bg-white/[0.03]">
+                                                            <div style={{ width: `${(d.todo / max) * 100}%` }} className="bg-blue-500/60" title={`Todo: ${d.todo}`} />
+                                                            <div style={{ width: `${(d.inprogress / max) * 100}%` }} className="bg-amber-500/60" title={`Active: ${d.inprogress}`} />
+                                                            <div style={{ width: `${(d.done / max) * 100}%` }} className="bg-emerald-500/60" title={`Done: ${d.done}`} />
+                                                        </div>
+                                                        <span className="text-[9px] text-midnight-600 w-4 shrink-0">{d.total}</span>
                                                     </div>
                                                 ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })()}
-
-                            {/* Donut 2: Overall Checklist Completion */}
-                            {allChecklists.length > 0 && (() => {
-                                const completed = allChecklists.filter(c => c.completed).length
-                                const total = allChecklists.length
-                                const pct = completed / total
-                                const radius = 40, cx = 50, cy = 50, circumference = 2 * Math.PI * radius
-
-                                return (
-                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-col">
-                                        <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-4">Overall Completion</p>
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="shrink-0">
-                                                <svg width="100" height="100" viewBox="0 0 100 100">
-                                                    <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="12" className="text-white/[0.05]" />
-                                                    <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#8b5cf6" strokeWidth="12"
-                                                        strokeDasharray={`${pct * circumference} ${circumference}`}
-                                                        transform={`rotate(-90 ${cx} ${cy})`} className="transition-all duration-500" strokeLinecap="round" />
-                                                    <text x={cx} y={cy - 2} textAnchor="middle" className="fill-white text-base font-bold">{completed}/{total}</text>
-                                                    <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[8px]">completed</text>
-                                                </svg>
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="bg-white/[0.03] rounded-lg p-2 border border-white/[0.04]">
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <span className="text-[10px] text-midnight-500 font-medium">Progress</span>
-                                                        <span className="text-[10px] text-violet-400 font-bold">{Math.round(pct * 100)}%</span>
-                                                    </div>
-                                                    <div className="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
-                                                        <div className="h-full bg-violet-500 rounded-full" style={{ width: `${pct * 100}%` }} />
-                                                    </div>
+                                                <div className="flex justify-center gap-3 pt-2 border-t border-white/[0.04]">
+                                                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500/60" /><span className="text-[8px] text-midnight-600">Todo</span></div>
+                                                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500/60" /><span className="text-[8px] text-midnight-600">Active</span></div>
+                                                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" /><span className="text-[8px] text-midnight-600">Done</span></div>
                                                 </div>
-                                                <p className="mt-2 text-[9px] text-midnight-600 italic text-center">Total items in all tasks</p>
                                             </div>
                                         </div>
-                                    </div>
-                                )
-                            })()}
-
-                            {/* Bar Chart: Tasks by Category & Status */}
-                            {categories.length > 0 && (() => {
-                                const barData = categories.map(cat => {
-                                    const catTasks = tasks.filter(t => t.category_id === cat.id)
-                                    return {
-                                        name: cat.name,
-                                        todo: catTasks.filter(t => t.status === 'TODO').length,
-                                        inprogress: catTasks.filter(t => t.status === 'IN_PROGRESS').length,
-                                        done: catTasks.filter(t => t.status === 'DONE').length,
-                                        total: catTasks.length
-                                    }
-                                }).filter(d => d.total > 0)
-
-                                const uncatTasks = tasks.filter(t => !t.category_id)
-                                if (uncatTasks.length > 0) {
-                                    barData.push({
-                                        name: 'Uncat',
-                                        todo: uncatTasks.filter(t => t.status === 'TODO').length,
-                                        inprogress: uncatTasks.filter(t => t.status === 'IN_PROGRESS').length,
-                                        done: uncatTasks.filter(t => t.status === 'DONE').length,
-                                        total: uncatTasks.length
-                                    })
-                                }
-
-                                const max = Math.max(...barData.map(d => d.total), 1)
-
-                                return (
-                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-col">
-                                        <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-4">Tasks by Status</p>
-                                        <div className="flex-1 flex flex-col justify-end space-y-2">
-                                            {barData.map((d, i) => (
-                                                <div key={i} className="flex items-center gap-2">
-                                                    <span className="text-[9px] text-midnight-400 w-10 truncate text-right shrink-0">{d.name}</span>
-                                                    <div className="flex-1 h-3 flex rounded-sm overflow-hidden bg-white/[0.03]">
-                                                        <div style={{ width: `${(d.todo / max) * 100}%` }} className="bg-blue-500/60" title={`Todo: ${d.todo}`} />
-                                                        <div style={{ width: `${(d.inprogress / max) * 100}%` }} className="bg-amber-500/60" title={`Active: ${d.inprogress}`} />
-                                                        <div style={{ width: `${(d.done / max) * 100}%` }} className="bg-emerald-500/60" title={`Done: ${d.done}`} />
-                                                    </div>
-                                                    <span className="text-[9px] text-midnight-600 w-4 shrink-0">{d.total}</span>
-                                                </div>
-                                            ))}
-                                            <div className="flex justify-center gap-3 pt-2 border-t border-white/[0.04]">
-                                                <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500/60" /><span className="text-[8px] text-midnight-600">Todo</span></div>
-                                                <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500/60" /><span className="text-[8px] text-midnight-600">Active</span></div>
-                                                <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" /><span className="text-[8px] text-midnight-600">Done</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })()}
-                        </div>
-                    )}
+                                    )
+                                })()}
+                            </div>
+                        )
+                    }
                     {/* Project Links */}
-                    <div className="mb-5 flex flex-wrap items-center gap-2">
+                    <div className="mb-5 flex flex-wrap items-center gap-2 pl-12 lg:pl-0">
                         {projectLinks.map((link) => (
                             <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
                                 className="group flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:border-violet-500/20 transition-all text-sm">
@@ -786,7 +791,7 @@ export default function ProjectDetailPage() {
                     </div>
 
                     {/* Project Notes Section */}
-                    <div className="mb-6 bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden">
+                    <div className="mb-6 bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden ml-12 lg:ml-0">
                         <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between">
                             <h3 className="text-xs font-bold text-white flex items-center gap-2">
                                 <StickyNote className="w-3.5 h-3.5 text-amber-400" /> Project Notes
@@ -947,316 +952,322 @@ export default function ProjectDetailPage() {
                             )
                         })}
                     </div>
-                </div>
-            </main>
+                </div >
+            </main >
 
             {/* Task Detail Modal */}
-            {selectedTask && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setSelectedTask(null)}>
-                    <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl w-full max-w-xl shadow-2xl max-h-[85vh] overflow-y-auto custom-scrollbar" onClick={(e) => e.stopPropagation()}>
-                        {/* Header */}
-                        <div className="px-6 pt-6 pb-4 border-b border-white/[0.04] flex items-start justify-between">
-                            <div className="flex-1 min-w-0 mr-4">
-                                {editingTaskTitle ? (
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            value={tempTaskTitle}
-                                            onChange={(e) => setTempTaskTitle(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') handleSaveTaskTitle()
-                                                if (e.key === 'Escape') setEditingTaskTitle(false)
-                                            }}
-                                            className="flex-1 bg-white/[0.04] border border-violet-500/40 rounded-lg px-3 py-1 text-lg font-bold text-white focus:outline-none"
-                                            autoFocus
-                                        />
-                                        <button onClick={handleSaveTaskTitle} className="p-1.5 text-emerald-400 hover:text-emerald-300">
-                                            <Check className="w-5 h-5" />
-                                        </button>
-                                        <button onClick={() => setEditingTaskTitle(false)} className="p-1.5 text-midnight-500 hover:text-white">
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 group/title">
-                                        <h2 className="text-lg font-bold text-white cursor-pointer hover:text-violet-400 transition-colors"
-                                            onClick={() => { setEditingTaskTitle(true); setTempTaskTitle(selectedTask.title) }}>
-                                            {selectedTask.title}
-                                        </h2>
-                                        <button onClick={() => { setEditingTaskTitle(true); setTempTaskTitle(selectedTask.title) }}
-                                            className="p-1 text-midnight-600 hover:text-violet-400 opacity-0 group-hover/title:opacity-100 transition-opacity">
-                                            <Edit2 className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                )}
-                                <p className="text-xs text-midnight-600 mt-1">
-                                    {COLUMNS.find(c => c.key === selectedTask.status)?.label}
-                                </p>
-                            </div>
-                            <button onClick={() => setSelectedTask(null)} className="p-1.5 text-midnight-500 hover:text-white rounded-lg hover:bg-white/[0.04]">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 space-y-6">
-                            {/* Description */}
-                            <div>
-                                <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2">Description</h4>
-                                {editingDescription ? (
-                                    <div>
-                                        <textarea value={tempDescription} onChange={(e) => setTempDescription(e.target.value)}
-                                            className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-700 focus:outline-none focus:border-violet-500/40 h-20 resize-none" placeholder="Add description..." autoFocus />
-                                        <div className="flex gap-2 mt-2">
-                                            <button onClick={handleSaveDescription} className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-md">Save</button>
-                                            <button onClick={() => setEditingDescription(false)} className="px-3 py-1 text-midnight-500 hover:text-white text-xs">Cancel</button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div onClick={() => { setEditingDescription(true); setTempDescription(selectedTask.description || '') }}
-                                        className="px-3 py-2 bg-white/[0.03] border border-white/[0.04] rounded-lg text-sm text-midnight-400 cursor-pointer hover:border-white/[0.08] min-h-[40px] transition-colors">
-                                        {selectedTask.description || 'Click to add description...'}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Due Date, Assignee & Category row */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div>
-                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                        <Calendar className="w-3.5 h-3.5" /> Due Date
-                                    </h4>
-                                    <input type="date" value={selectedTask.due_date?.split('T')[0] || ''}
-                                        onChange={(e) => handleSetDueDate(e.target.value)}
-                                        className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]" />
-                                </div>
-                                <div>
-                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                        <UserPlus className="w-3.5 h-3.5" /> Assignee
-                                    </h4>
-                                    <select value={selectedTask.assigned_to || ''}
-                                        onChange={(e) => handleAssignMember(e.target.value)}
-                                        className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]">
-                                        <option value="" className="bg-[#0f0f23]">Unassigned</option>
-                                        {members.map((m) => (
-                                            <option key={m.user_id} value={m.user_id} className="bg-[#0f0f23]">{m.users?.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                        <Tag className="w-3.5 h-3.5" /> Category
-                                    </h4>
-                                    <select value={selectedTask.category_id || ''}
-                                        onChange={async (e) => {
-                                            const categoryId = e.target.value || null
-                                            setSelectedTask({ ...selectedTask, category_id: categoryId })
-                                            setTasks(prev => prev.map(t => t.id === selectedTask.id ? { ...t, category_id: categoryId } : t))
-                                            await fetch(`/api/tasks/${selectedTask.id}`, {
-                                                method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ categoryId })
-                                            })
-                                        }}
-                                        className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]">
-                                        <option value="" className="bg-[#0f0f23]">No category</option>
-                                        {categories.map(c => (
-                                            <option key={c.id} value={c.id} className="bg-[#0f0f23]">{c.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Checklists */}
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider flex items-center gap-1.5">
-                                        <CheckSquare className="w-3.5 h-3.5" /> Checklist
-                                        {taskChecklists.length > 0 && (
-                                            <span className="text-midnight-600 ml-1">
-                                                ({taskChecklists.filter(c => c.completed).length}/{taskChecklists.length})
-                                            </span>
-                                        )}
-                                    </h4>
-                                    {taskChecklists.length > 0 && (
-                                        <span className="text-xs text-midnight-500 font-medium">{checklistProgress()}%</span>
-                                    )}
-                                </div>
-
-                                {/* Progress bar */}
-                                {taskChecklists.length > 0 && (
-                                    <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden mb-3">
-                                        <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-300" style={{ width: `${checklistProgress()}%` }} />
-                                    </div>
-                                )}
-
-                                {/* Checklist items */}
-                                <div className="space-y-1.5">
-                                    {taskChecklists.map((item) => (
-                                        <div key={item.id} className="flex items-center gap-2 group px-2 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors">
-                                            <button onClick={() => handleToggleChecklist(item)} className="shrink-0">
-                                                {item.completed
-                                                    ? <CheckSquare className="w-4 h-4 text-violet-400" />
-                                                    : <Square className="w-4 h-4 text-midnight-600 hover:text-violet-400 transition-colors" />
-                                                }
-                                            </button>
-
-                                            {editingChecklistId === item.id ? (
-                                                <div className="flex-1 flex items-center gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={tempChecklistTitle}
-                                                        onChange={(e) => setTempChecklistTitle(e.target.value)}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') {
-                                                                handleUpdateChecklist(item.id, { title: tempChecklistTitle })
-                                                                setEditingChecklistId(null)
-                                                            }
-                                                            if (e.key === 'Escape') setEditingChecklistId(null)
-                                                        }}
-                                                        className="flex-1 bg-white/[0.04] border border-violet-500/30 rounded px-2 py-0.5 text-sm text-white focus:outline-none"
-                                                        autoFocus
-                                                    />
-                                                    <button onClick={() => {
-                                                        handleUpdateChecklist(item.id, { title: tempChecklistTitle })
-                                                        setEditingChecklistId(null)
-                                                    }} className="text-emerald-400 hover:text-emerald-300">
-                                                        <Check className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <span className={`text-sm flex-1 cursor-pointer ${item.completed ? 'line-through text-midnight-600' : 'text-white'}`}
-                                                    onClick={() => { setEditingChecklistId(item.id); setTempChecklistTitle(item.title) }}>
-                                                    {item.title}
-                                                </span>
-                                            )}
-
-                                            <button onClick={() => { setEditingChecklistId(item.id); setTempChecklistTitle(item.title) }}
-                                                className="p-0.5 text-midnight-700 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-all">
-                                                <Edit2 className="w-3 h-3" />
-                                            </button>
-                                            <button onClick={() => handleDeleteChecklist(item.id)} className="p-0.5 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
-                                                <Trash2 className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Add checklist item */}
-                                <div className="flex gap-2 mt-3">
-                                    <input type="text" value={newChecklistTitle} onChange={(e) => setNewChecklistTitle(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddChecklist() }}
-                                        className="flex-1 px-3 py-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-700 focus:outline-none focus:border-violet-500/40"
-                                        placeholder="Add item..." />
-                                    <button onClick={handleAddChecklist} className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Category Management Modal */}
-            {showCategoryModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-                        <div className="flex items-center justify-between mb-5">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2"><Tag className="w-5 h-5 text-violet-400" /> Categories</h3>
-                            <button onClick={() => setShowCategoryModal(false)} className="p-1 text-midnight-500 hover:text-white"><X className="w-5 h-5" /></button>
-                        </div>
-
-                        {/* Add new category */}
-                        <div className="flex gap-2 mb-4">
-                            <input type="color" value={newCatColor} onChange={(e) => setNewCatColor(e.target.value)}
-                                className="w-10 h-10 rounded-lg cursor-pointer bg-transparent border border-white/[0.06]" />
-                            <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
-                                onKeyDown={async (e) => {
-                                    if (e.key === 'Enter' && newCatName.trim()) {
-                                        const res = await fetch('/api/projects/categories', {
-                                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ projectId, name: newCatName.trim(), color: newCatColor })
-                                        })
-                                        const data = await res.json()
-                                        if (data.category) { setCategories(prev => [...prev, data.category]); setNewCatName('') }
-                                    }
-                                }}
-                                className="flex-1 px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-600 focus:outline-none focus:border-violet-500/40" placeholder="Category name..." />
-                            <button onClick={async () => {
-                                if (!newCatName.trim()) return
-                                const res = await fetch('/api/projects/categories', {
-                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ projectId, name: newCatName.trim(), color: newCatColor })
-                                })
-                                const data = await res.json()
-                                if (data.category) { setCategories(prev => [...prev, data.category]); setNewCatName('') }
-                            }} className="px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg"><Plus className="w-4 h-4" /></button>
-                        </div>
-
-                        {/* List */}
-                        <div className="space-y-2 mt-2">
-                            {categories.length === 0 && (
-                                <p className="text-sm text-midnight-600 text-center py-4">No categories yet</p>
-                            )}
-                            {categories.map(cat => (
-                                <div key={cat.id} className="group">
-                                    {editingCategory?.id === cat.id ? (
-                                        <div className="flex gap-2 p-2 bg-white/[0.05] border border-violet-500/30 rounded-lg">
-                                            <input type="color" value={editingCategory.color} onChange={(e) => setEditingCategory({ ...editingCategory, color: e.target.value })}
-                                                className="w-8 h-8 rounded cursor-pointer bg-transparent border border-white/[0.06]" />
-                                            <input type="text" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                                                autoFocus
-                                                onKeyDown={async (e) => {
-                                                    if (e.key === 'Enter') {
-                                                        const res = await fetch('/api/projects/categories', {
-                                                            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ id: cat.id, name: editingCategory.name.trim(), color: editingCategory.color })
-                                                        })
-                                                        const data = await res.json()
-                                                        if (data.category) {
-                                                            setCategories(prev => prev.map(c => c.id === cat.id ? data.category : c))
-                                                            setEditingCategory(null)
-                                                        }
-                                                    }
-                                                    if (e.key === 'Escape') setEditingCategory(null)
+            {
+                selectedTask && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setSelectedTask(null)}>
+                        <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl w-full max-w-xl shadow-2xl max-h-[85vh] overflow-y-auto custom-scrollbar" onClick={(e) => e.stopPropagation()}>
+                            {/* Header */}
+                            <div className="px-6 pt-6 pb-4 border-b border-white/[0.04] flex items-start justify-between">
+                                <div className="flex-1 min-w-0 mr-4">
+                                    {editingTaskTitle ? (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={tempTaskTitle}
+                                                onChange={(e) => setTempTaskTitle(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleSaveTaskTitle()
+                                                    if (e.key === 'Escape') setEditingTaskTitle(false)
                                                 }}
-                                                className="flex-1 px-2 py-1 bg-white/[0.04] border border-white/[0.06] rounded text-white text-sm focus:outline-none focus:border-violet-500/40" />
-                                            <button onClick={async () => {
-                                                const res = await fetch('/api/projects/categories', {
-                                                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ id: cat.id, name: editingCategory.name.trim(), color: editingCategory.color })
-                                                })
-                                                const data = await res.json()
-                                                if (data.category) {
-                                                    setCategories(prev => prev.map(c => c.id === cat.id ? data.category : c))
-                                                    setEditingCategory(null)
-                                                }
-                                            }} className="p-1 text-emerald-400 hover:text-emerald-300"><Check className="w-4 h-4" /></button>
-                                            <button onClick={() => setEditingCategory(null)} className="p-1 text-midnight-500 hover:text-white"><X className="w-4 h-4" /></button>
+                                                className="flex-1 bg-white/[0.04] border border-violet-500/40 rounded-lg px-3 py-1 text-lg font-bold text-white focus:outline-none"
+                                                autoFocus
+                                            />
+                                            <button onClick={handleSaveTaskTitle} className="p-1.5 text-emerald-400 hover:text-emerald-300">
+                                                <Check className="w-5 h-5" />
+                                            </button>
+                                            <button onClick={() => setEditingTaskTitle(false)} className="p-1.5 text-midnight-500 hover:text-white">
+                                                <X className="w-5 h-5" />
+                                            </button>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/[0.04] rounded-lg hover:border-white/10 transition-colors">
-                                            <div className="flex items-center gap-2 cursor-pointer flex-1" onClick={() => setEditingCategory(cat)}>
-                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                                                <span className="text-sm text-white font-medium">{cat.name}</span>
-                                                <span className="text-[10px] text-midnight-600">{tasks.filter(t => t.category_id === cat.id).length} tasks</span>
+                                        <div className="flex items-center gap-2 group/title">
+                                            <h2 className="text-lg font-bold text-white cursor-pointer hover:text-violet-400 transition-colors"
+                                                onClick={() => { setEditingTaskTitle(true); setTempTaskTitle(selectedTask.title) }}>
+                                                {selectedTask.title}
+                                            </h2>
+                                            <button onClick={() => { setEditingTaskTitle(true); setTempTaskTitle(selectedTask.title) }}
+                                                className="p-1 text-midnight-600 hover:text-violet-400 opacity-0 group-hover/title:opacity-100 transition-opacity">
+                                                <Edit2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    )}
+                                    <p className="text-xs text-midnight-600 mt-1">
+                                        {COLUMNS.find(c => c.key === selectedTask.status)?.label}
+                                    </p>
+                                </div>
+                                <button onClick={() => setSelectedTask(null)} className="p-1.5 text-midnight-500 hover:text-white rounded-lg hover:bg-white/[0.04]">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-6">
+                                {/* Description */}
+                                <div>
+                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2">Description</h4>
+                                    {editingDescription ? (
+                                        <div>
+                                            <textarea value={tempDescription} onChange={(e) => setTempDescription(e.target.value)}
+                                                className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-700 focus:outline-none focus:border-violet-500/40 h-20 resize-none" placeholder="Add description..." autoFocus />
+                                            <div className="flex gap-2 mt-2">
+                                                <button onClick={handleSaveDescription} className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-md">Save</button>
+                                                <button onClick={() => setEditingDescription(false)} className="px-3 py-1 text-midnight-500 hover:text-white text-xs">Cancel</button>
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <button onClick={() => setEditingCategory(cat)} className="p-1 text-midnight-700 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity"><Edit2 className="w-3.5 h-3.5" /></button>
-                                                <button onClick={async () => {
-                                                    if (!confirm(`ต้องการลบ category "${cat.name}" จริงหรือไม่?`)) return
-                                                    await fetch(`/api/projects/categories?id=${cat.id}`, { method: 'DELETE' })
-                                                    setCategories(prev => prev.filter(c => c.id !== cat.id))
-                                                    if (filterCategory === cat.id) setFilterCategory(null)
-                                                }} className="p-1 text-midnight-700 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
-                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div onClick={() => { setEditingDescription(true); setTempDescription(selectedTask.description || '') }}
+                                            className="px-3 py-2 bg-white/[0.03] border border-white/[0.04] rounded-lg text-sm text-midnight-400 cursor-pointer hover:border-white/[0.08] min-h-[40px] transition-colors">
+                                            {selectedTask.description || 'Click to add description...'}
                                         </div>
                                     )}
                                 </div>
-                            ))}
+
+                                {/* Due Date, Assignee & Category row */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                            <Calendar className="w-3.5 h-3.5" /> Due Date
+                                        </h4>
+                                        <input type="date" value={selectedTask.due_date?.split('T')[0] || ''}
+                                            onChange={(e) => handleSetDueDate(e.target.value)}
+                                            className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                            <UserPlus className="w-3.5 h-3.5" /> Assignee
+                                        </h4>
+                                        <select value={selectedTask.assigned_to || ''}
+                                            onChange={(e) => handleAssignMember(e.target.value)}
+                                            className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]">
+                                            <option value="" className="bg-[#0f0f23]">Unassigned</option>
+                                            {members.map((m) => (
+                                                <option key={m.user_id} value={m.user_id} className="bg-[#0f0f23]">{m.users?.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                            <Tag className="w-3.5 h-3.5" /> Category
+                                        </h4>
+                                        <select value={selectedTask.category_id || ''}
+                                            onChange={async (e) => {
+                                                const categoryId = e.target.value || null
+                                                if (selectedTask) {
+                                                    setSelectedTask({ ...selectedTask, category_id: categoryId })
+                                                    setTasks(prev => prev.map(t => t.id === selectedTask.id ? { ...t, category_id: categoryId } : t))
+                                                    await fetch(`/api/tasks/${selectedTask.id}`, {
+                                                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ categoryId })
+                                                    })
+                                                }
+                                            }}
+                                            className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]">
+                                            <option value="" className="bg-[#0f0f23]">No category</option>
+                                            {categories.map(c => (
+                                                <option key={c.id} value={c.id} className="bg-[#0f0f23]">{c.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Checklists */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider flex items-center gap-1.5">
+                                            <CheckSquare className="w-3.5 h-3.5" /> Checklist
+                                            {taskChecklists.length > 0 && (
+                                                <span className="text-midnight-600 ml-1">
+                                                    ({taskChecklists.filter(c => c.completed).length}/{taskChecklists.length})
+                                                </span>
+                                            )}
+                                        </h4>
+                                        {taskChecklists.length > 0 && (
+                                            <span className="text-xs text-midnight-500 font-medium">{checklistProgress()}%</span>
+                                        )}
+                                    </div>
+
+                                    {/* Progress bar */}
+                                    {taskChecklists.length > 0 && (
+                                        <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden mb-3">
+                                            <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-300" style={{ width: `${checklistProgress()}%` }} />
+                                        </div>
+                                    )}
+
+                                    {/* Checklist items */}
+                                    <div className="space-y-1.5">
+                                        {taskChecklists.map((item) => (
+                                            <div key={item.id} className="flex items-center gap-2 group px-2 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors">
+                                                <button onClick={() => handleToggleChecklist(item)} className="shrink-0">
+                                                    {item.completed
+                                                        ? <CheckSquare className="w-4 h-4 text-violet-400" />
+                                                        : <Square className="w-4 h-4 text-midnight-600 hover:text-violet-400 transition-colors" />
+                                                    }
+                                                </button>
+
+                                                {editingChecklistId === item.id ? (
+                                                    <div className="flex-1 flex items-center gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={tempChecklistTitle}
+                                                            onChange={(e) => setTempChecklistTitle(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    handleUpdateChecklist(item.id, { title: tempChecklistTitle })
+                                                                    setEditingChecklistId(null)
+                                                                }
+                                                                if (e.key === 'Escape') setEditingChecklistId(null)
+                                                            }}
+                                                            className="flex-1 bg-white/[0.04] border border-violet-500/30 rounded px-2 py-0.5 text-sm text-white focus:outline-none"
+                                                            autoFocus
+                                                        />
+                                                        <button onClick={() => {
+                                                            handleUpdateChecklist(item.id, { title: tempChecklistTitle })
+                                                            setEditingChecklistId(null)
+                                                        }} className="text-emerald-400 hover:text-emerald-300">
+                                                            <Check className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <span className={`text-sm flex-1 cursor-pointer ${item.completed ? 'line-through text-midnight-600' : 'text-white'}`}
+                                                        onClick={() => { setEditingChecklistId(item.id); setTempChecklistTitle(item.title) }}>
+                                                        {item.title}
+                                                    </span>
+                                                )}
+
+                                                <button onClick={() => { setEditingChecklistId(item.id); setTempChecklistTitle(item.title) }}
+                                                    className="p-0.5 text-midnight-700 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <Edit2 className="w-3 h-3" />
+                                                </button>
+                                                <button onClick={() => handleDeleteChecklist(item.id)} className="p-0.5 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <Trash2 className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Add checklist item */}
+                                    <div className="flex gap-2 mt-3">
+                                        <input type="text" value={newChecklistTitle} onChange={(e) => setNewChecklistTitle(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') handleAddChecklist() }}
+                                            className="flex-1 px-3 py-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-700 focus:outline-none focus:border-violet-500/40"
+                                            placeholder="Add item..." />
+                                        <button onClick={handleAddChecklist} className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors">
+                                            <Plus className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+            {/* Category Management Modal */}
+            {
+                showCategoryModal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                            <div className="flex items-center justify-between mb-5">
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2"><Tag className="w-5 h-5 text-violet-400" /> Categories</h3>
+                                <button onClick={() => setShowCategoryModal(false)} className="p-1 text-midnight-500 hover:text-white"><X className="w-5 h-5" /></button>
+                            </div>
+
+                            {/* Add new category */}
+                            <div className="flex gap-2 mb-4">
+                                <input type="color" value={newCatColor} onChange={(e) => setNewCatColor(e.target.value)}
+                                    className="w-10 h-10 rounded-lg cursor-pointer bg-transparent border border-white/[0.06]" />
+                                <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
+                                    onKeyDown={async (e) => {
+                                        if (e.key === 'Enter' && newCatName.trim()) {
+                                            const res = await fetch('/api/projects/categories', {
+                                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ projectId, name: newCatName.trim(), color: newCatColor })
+                                            })
+                                            const data = await res.json()
+                                            if (data.category) { setCategories(prev => [...prev, data.category]); setNewCatName('') }
+                                        }
+                                    }}
+                                    className="flex-1 px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-600 focus:outline-none focus:border-violet-500/40" placeholder="Category name..." />
+                                <button onClick={async () => {
+                                    if (!newCatName.trim()) return
+                                    const res = await fetch('/api/projects/categories', {
+                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ projectId, name: newCatName.trim(), color: newCatColor })
+                                    })
+                                    const data = await res.json()
+                                    if (data.category) { setCategories(prev => [...prev, data.category]); setNewCatName('') }
+                                }} className="px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg"><Plus className="w-4 h-4" /></button>
+                            </div>
+
+                            {/* List */}
+                            <div className="space-y-2 mt-2">
+                                {categories.length === 0 && (
+                                    <p className="text-sm text-midnight-600 text-center py-4">No categories yet</p>
+                                )}
+                                {categories.map(cat => (
+                                    <div key={cat.id} className="group">
+                                        {editingCategory?.id === cat.id ? (
+                                            <div className="flex gap-2 p-2 bg-white/[0.05] border border-violet-500/30 rounded-lg">
+                                                <input type="color" value={editingCategory.color} onChange={(e) => setEditingCategory({ ...editingCategory, color: e.target.value })}
+                                                    className="w-8 h-8 rounded cursor-pointer bg-transparent border border-white/[0.06]" />
+                                                <input type="text" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                                                    autoFocus
+                                                    onKeyDown={async (e) => {
+                                                        if (e.key === 'Enter') {
+                                                            const res = await fetch('/api/projects/categories', {
+                                                                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ id: cat.id, name: editingCategory.name.trim(), color: editingCategory.color })
+                                                            })
+                                                            const data = await res.json()
+                                                            if (data.category) {
+                                                                setCategories(prev => prev.map(c => c.id === cat.id ? data.category : c))
+                                                                setEditingCategory(null)
+                                                            }
+                                                        }
+                                                        if (e.key === 'Escape') setEditingCategory(null)
+                                                    }}
+                                                    className="flex-1 px-2 py-1 bg-white/[0.04] border border-white/[0.06] rounded text-white text-sm focus:outline-none focus:border-violet-500/40" />
+                                                <button onClick={async () => {
+                                                    const res = await fetch('/api/projects/categories', {
+                                                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ id: cat.id, name: editingCategory.name.trim(), color: editingCategory.color })
+                                                    })
+                                                    const data = await res.json()
+                                                    if (data.category) {
+                                                        setCategories(prev => prev.map(c => c.id === cat.id ? data.category : c))
+                                                        setEditingCategory(null)
+                                                    }
+                                                }} className="p-1 text-emerald-400 hover:text-emerald-300"><Check className="w-4 h-4" /></button>
+                                                <button onClick={() => setEditingCategory(null)} className="p-1 text-midnight-500 hover:text-white"><X className="w-4 h-4" /></button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/[0.04] rounded-lg hover:border-white/10 transition-colors">
+                                                <div className="flex items-center gap-2 cursor-pointer flex-1" onClick={() => setEditingCategory(cat)}>
+                                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
+                                                    <span className="text-sm text-white font-medium">{cat.name}</span>
+                                                    <span className="text-[10px] text-midnight-600">{tasks.filter(t => t.category_id === cat.id).length} tasks</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <button onClick={() => setEditingCategory(cat)} className="p-1 text-midnight-700 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity"><Edit2 className="w-3.5 h-3.5" /></button>
+                                                    <button onClick={async () => {
+                                                        if (!confirm(`ต้องการลบ category "${cat.name}" จริงหรือไม่?`)) return
+                                                        await fetch(`/api/projects/categories?id=${cat.id}`, { method: 'DELETE' })
+                                                        setCategories(prev => prev.filter(c => c.id !== cat.id))
+                                                        if (filterCategory === cat.id) setFilterCategory(null)
+                                                    }} className="p-1 text-midnight-700 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     )
 }
