@@ -19,7 +19,8 @@ import {
     Tag,
     ChevronRight,
     ExternalLink,
-    Star
+    Star,
+    Calendar
 } from 'lucide-react'
 
 interface Vendor {
@@ -32,6 +33,7 @@ interface Vendor {
     category: string
     rating: number
     notes: string
+    credit_term: number
     created_at: string
 }
 
@@ -52,7 +54,8 @@ export default function VendorsPage() {
         address: '',
         category: 'Supplier',
         rating: 0,
-        notes: ''
+        notes: '',
+        credit_term: 0
     })
 
     useEffect(() => {
@@ -97,7 +100,8 @@ export default function VendorsPage() {
                     address: '',
                     category: 'Supplier',
                     rating: 0,
-                    notes: ''
+                    notes: '',
+                    credit_term: 0
                 })
                 fetchVendors()
             } else {
@@ -132,7 +136,8 @@ export default function VendorsPage() {
             address: vendor.address || '',
             category: vendor.category || 'Supplier',
             rating: vendor.rating || 0,
-            notes: vendor.notes || ''
+            notes: vendor.notes || '',
+            credit_term: vendor.credit_term || 0
         })
         setShowModal(true)
     }
@@ -214,6 +219,12 @@ export default function VendorsPage() {
                                             <Tag className="w-3 h-3 text-violet-400" />
                                             <span className="text-xs text-violet-400 font-medium">{vendor.category}</span>
                                         </div>
+                                        {vendor.credit_term > 0 && (
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <Calendar className="w-3 h-3 text-midnight-500" />
+                                                <span className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider">Credit: {vendor.credit_term} Days</span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="space-y-2.5">
@@ -310,6 +321,16 @@ export default function VendorsPage() {
                                         <option value="Agency" className="bg-[#0f0f23]">Agency</option>
                                         <option value="Other" className="bg-[#0f0f23]">Other</option>
                                     </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Credit Term (Days)</label>
+                                    <input
+                                        type="number"
+                                        value={formData.credit_term}
+                                        onChange={(e) => setFormData({ ...formData, credit_term: parseInt(e.target.value) || 0 })}
+                                        placeholder="30"
+                                        className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Contact Person</label>

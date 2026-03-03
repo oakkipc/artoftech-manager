@@ -27,7 +27,7 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { name, contact_person, email, phone, address, category, rating, notes } = body
+        const { name, contact_person, email, phone, address, category, rating, notes, credit_term } = body
 
         if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
@@ -42,7 +42,8 @@ export async function POST(request: Request) {
                 address,
                 category,
                 rating: rating || 0,
-                notes
+                notes,
+                credit_term: credit_term || 0
             })
             .select()
             .single()
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
     try {
         const body = await request.json()
-        const { id, name, contact_person, email, phone, address, category, rating, notes } = body
+        const { id, name, contact_person, email, phone, address, category, rating, notes, credit_term } = body
 
         if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 })
 
@@ -73,7 +74,8 @@ export async function PATCH(request: Request) {
                 address,
                 category,
                 rating,
-                notes
+                notes,
+                credit_term
             })
             .eq('id', id)
             .select()

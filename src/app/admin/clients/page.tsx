@@ -20,7 +20,8 @@ import {
     ChevronRight,
     Building2,
     CreditCard,
-    Star
+    Star,
+    Calendar
 } from 'lucide-react'
 
 interface Client {
@@ -33,6 +34,7 @@ interface Client {
     company_tax_id: string
     rating: number
     notes: string
+    credit_term: number
     created_at: string
 }
 
@@ -53,7 +55,8 @@ export default function ClientsPage() {
         address: '',
         company_tax_id: '',
         rating: 0,
-        notes: ''
+        notes: '',
+        credit_term: 0
     })
 
     useEffect(() => {
@@ -98,7 +101,8 @@ export default function ClientsPage() {
                     address: '',
                     company_tax_id: '',
                     rating: 0,
-                    notes: ''
+                    notes: '',
+                    credit_term: 0
                 })
                 fetchClients()
             } else {
@@ -133,7 +137,8 @@ export default function ClientsPage() {
             address: client.address || '',
             company_tax_id: client.company_tax_id || '',
             rating: client.rating || 0,
-            notes: client.notes || ''
+            notes: client.notes || '',
+            credit_term: client.credit_term || 0
         })
         setShowModal(true)
     }
@@ -215,6 +220,12 @@ export default function ClientsPage() {
                                             <div className="flex items-center gap-1.5 mt-1">
                                                 <CreditCard className="w-3 h-3 text-emerald-400" />
                                                 <span className="text-xs text-emerald-400 font-medium">{client.company_tax_id}</span>
+                                            </div>
+                                        )}
+                                        {client.credit_term > 0 && (
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <Calendar className="w-3 h-3 text-midnight-500" />
+                                                <span className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider">Credit: {client.credit_term} Days</span>
                                             </div>
                                         )}
                                     </div>
@@ -306,6 +317,16 @@ export default function ClientsPage() {
                                         value={formData.company_tax_id}
                                         onChange={(e) => setFormData({ ...formData, company_tax_id: e.target.value })}
                                         placeholder="0123456789012"
+                                        className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/40"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Credit Term (Days)</label>
+                                    <input
+                                        type="number"
+                                        value={formData.credit_term}
+                                        onChange={(e) => setFormData({ ...formData, credit_term: parseInt(e.target.value) || 0 })}
+                                        placeholder="30"
                                         className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/40"
                                     />
                                 </div>
