@@ -18,7 +18,8 @@ import {
     MapPin,
     Tag,
     ChevronRight,
-    ExternalLink
+    ExternalLink,
+    Star
 } from 'lucide-react'
 
 interface Vendor {
@@ -29,6 +30,8 @@ interface Vendor {
     phone: string
     address: string
     category: string
+    rating: number
+    notes: string
     created_at: string
 }
 
@@ -47,7 +50,9 @@ export default function VendorsPage() {
         email: '',
         phone: '',
         address: '',
-        category: 'Supplier'
+        category: 'Supplier',
+        rating: 0,
+        notes: ''
     })
 
     useEffect(() => {
@@ -90,7 +95,9 @@ export default function VendorsPage() {
                     email: '',
                     phone: '',
                     address: '',
-                    category: 'Supplier'
+                    category: 'Supplier',
+                    rating: 0,
+                    notes: ''
                 })
                 fetchVendors()
             }
@@ -117,7 +124,9 @@ export default function VendorsPage() {
             email: vendor.email || '',
             phone: vendor.phone || '',
             address: vendor.address || '',
-            category: vendor.category || 'Supplier'
+            category: vendor.category || 'Supplier',
+            rating: vendor.rating || 0,
+            notes: vendor.notes || ''
         })
         setShowModal(true)
     }
@@ -190,7 +199,12 @@ export default function VendorsPage() {
                                 <div className="space-y-4">
                                     <div>
                                         <h3 className="text-white font-bold text-lg">{vendor.name}</h3>
-                                        <div className="flex items-center gap-1.5 mt-1">
+                                        <div className="flex items-center gap-1 mt-1">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                <Star key={s} className={`w-3 h-3 ${s <= (vendor.rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-midnight-700'}`} />
+                                            ))}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 mt-1.5">
                                             <Tag className="w-3 h-3 text-violet-400" />
                                             <span className="text-xs text-violet-400 font-medium">{vendor.category}</span>
                                         </div>
@@ -219,6 +233,13 @@ export default function VendorsPage() {
                                             <div className="flex items-start gap-3 text-midnight-400 text-sm">
                                                 <MapPin className="w-4 h-4 opacity-50 text-midnight-600 mt-0.5" />
                                                 <span className="line-clamp-2">{vendor.address}</span>
+                                            </div>
+                                        )}
+                                        {vendor.notes && (
+                                            <div className="mt-4 p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+                                                <p className="text-xs text-midnight-500 line-clamp-3 leading-relaxed">
+                                                    {vendor.notes}
+                                                </p>
                                             </div>
                                         )}
                                     </div>
@@ -317,6 +338,28 @@ export default function VendorsPage() {
                                         value={formData.address}
                                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                         className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40 min-h-[80px]"
+                                    />
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Rating</label>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        {[1, 2, 3, 4, 5].map((s) => (
+                                            <button
+                                                key={s}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, rating: s })}
+                                                className="p-1 transition-transform active:scale-90"
+                                            >
+                                                <Star className={`w-6 h-6 ${s <= formData.rating ? 'text-yellow-400 fill-yellow-400' : 'text-midnight-700 hover:text-midnight-400'}`} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Internal Notes</label>
+                                    <textarea
+                                        value={formData.notes}
+                                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                        placeholder="Add important information about this vendor..."
+                                        className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40 min-h-[100px]"
                                     />
                                 </div>
                             </div>

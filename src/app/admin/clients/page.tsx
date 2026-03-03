@@ -19,7 +19,8 @@ import {
     Tag,
     ChevronRight,
     Building2,
-    CreditCard
+    CreditCard,
+    Star
 } from 'lucide-react'
 
 interface Client {
@@ -30,6 +31,8 @@ interface Client {
     phone: string
     address: string
     company_tax_id: string
+    rating: number
+    notes: string
     created_at: string
 }
 
@@ -48,7 +51,9 @@ export default function ClientsPage() {
         email: '',
         phone: '',
         address: '',
-        company_tax_id: ''
+        company_tax_id: '',
+        rating: 0,
+        notes: ''
     })
 
     useEffect(() => {
@@ -91,7 +96,9 @@ export default function ClientsPage() {
                     email: '',
                     phone: '',
                     address: '',
-                    company_tax_id: ''
+                    company_tax_id: '',
+                    rating: 0,
+                    notes: ''
                 })
                 fetchClients()
             }
@@ -118,7 +125,9 @@ export default function ClientsPage() {
             email: client.email || '',
             phone: client.phone || '',
             address: client.address || '',
-            company_tax_id: client.company_tax_id || ''
+            company_tax_id: client.company_tax_id || '',
+            rating: client.rating || 0,
+            notes: client.notes || ''
         })
         setShowModal(true)
     }
@@ -191,6 +200,11 @@ export default function ClientsPage() {
                                 <div className="space-y-4">
                                     <div>
                                         <h3 className="text-white font-bold text-lg">{client.name}</h3>
+                                        <div className="flex items-center gap-1 mt-1">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                <Star key={s} className={`w-3 h-3 ${s <= (client.rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-midnight-700'}`} />
+                                            ))}
+                                        </div>
                                         {client.company_tax_id && (
                                             <div className="flex items-center gap-1.5 mt-1">
                                                 <CreditCard className="w-3 h-3 text-emerald-400" />
@@ -222,6 +236,13 @@ export default function ClientsPage() {
                                             <div className="flex items-start gap-3 text-midnight-400 text-sm">
                                                 <MapPin className="w-4 h-4 opacity-50 text-midnight-600 mt-0.5" />
                                                 <span className="line-clamp-2">{client.address}</span>
+                                            </div>
+                                        )}
+                                        {client.notes && (
+                                            <div className="mt-4 p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+                                                <p className="text-xs text-midnight-500 line-clamp-3 leading-relaxed">
+                                                    {client.notes}
+                                                </p>
                                             </div>
                                         )}
                                     </div>
@@ -315,6 +336,28 @@ export default function ClientsPage() {
                                         value={formData.address}
                                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                         className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/40 min-h-[80px]"
+                                    />
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Rating</label>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        {[1, 2, 3, 4, 5].map((s) => (
+                                            <button
+                                                key={s}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, rating: s })}
+                                                className="p-1 transition-transform active:scale-90"
+                                            >
+                                                <Star className={`w-6 h-6 ${s <= formData.rating ? 'text-yellow-400 fill-yellow-400' : 'text-midnight-700 hover:text-midnight-400'}`} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Internal Notes</label>
+                                    <textarea
+                                        value={formData.notes}
+                                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                        placeholder="Add important information about this client..."
+                                        className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/40 min-h-[100px]"
                                     />
                                 </div>
                             </div>
