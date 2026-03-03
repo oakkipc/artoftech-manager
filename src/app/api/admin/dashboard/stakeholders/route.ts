@@ -17,12 +17,35 @@ export async function GET() {
             supabase.from('vendors').select('id, name, rating, category')
         ])
 
-        // 2. Fetch all budget transactions with client/vendor links
-        const { data: transactions, error } = await supabase
+        // 2. Fetch all budget transactions
+        const { data: rawTransactions, error } = await supabase
             .from('project_budgets')
-            .select('amount, type, client_id, vendor_id, date, frequency')
+            .select('amount, type, client_id, vendor_id, date, frequency, end_date')
 
         if (error) throw error
+
+        // Expand recurring transactions (for the current year by default if no range)
+        const now = new Date()
+        const startOfYear = new Date(now.getFullYear(), 0, 1)
+        const endOfYear = new Date(now.getFullYear(), 11, 31)
+
+        const transactions: any[] = []
+            ; (rawTransactions || []).forEach(t => {
+                if (t.frequency === 'ONCE') {
+                    transactions.push(t)
+                } else {
+                    let current = new Date(t.date)
+                    const tEnd = t.end_date ? new Date(t.end_date) : endOfYear
+                    const limit = tEnd > endOfYear ? endOfYear : tEnd
+
+                    while (current <= limit) {
+                        transactions.push({ ...t, date: current.toISOString().split('T')[0] })
+                        if (t.frequency === 'MONTHLY') current.setMonth(current.getMonth() + 1)
+                        else if (t.frequency === 'YEARLY') current.setFullYear(current.getFullYear() + 1)
+                        else break
+                    }
+                }
+            })
 
         // 3. Process Client Stats
         const clientStats = (clients || []).map(client => {

@@ -56,6 +56,7 @@ export default function BudgetPage() {
     const [showModal, setShowModal] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
+    const [timeFilter, setTimeFilter] = useState<'daily' | 'weekly' | 'monthly' | 'yearly' | 'all'>('all')
     const [currentMonth, setCurrentMonth] = useState(new Date())
 
     // Filters
@@ -74,7 +75,8 @@ export default function BudgetPage() {
         amount: '',
         type: 'EXPENSE',
         description: '',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        endDate: ''
     })
 
     useEffect(() => {
@@ -85,14 +87,48 @@ export default function BudgetPage() {
         const cId = urlParams.get('clientId')
         if (vId) setFilterVendor(vId)
         if (cId) setFilterClient(cId)
-        fetchInitialData()
     }, [])
+
+    useEffect(() => {
+        fetchInitialData()
+    }, [timeFilter, currentMonth])
 
     const fetchInitialData = async () => {
         setLoading(true)
         try {
+            let url = '/api/budgets?'
+
+            // Calculate range based on filter
+            let start: string | null = null
+            let end: string | null = null
+
+            if (timeFilter === 'daily') {
+                const d = new Date()
+                start = d.toISOString().split('T')[0]
+                end = start
+            } else if (timeFilter === 'weekly') {
+                const now = new Date()
+                const startDay = new Date(now.setDate(now.getDate() - now.getDay()))
+                const endDay = new Date(now.setDate(now.getDate() - now.getDay() + 6))
+                start = startDay.toISOString().split('T')[0]
+                end = endDay.toISOString().split('T')[0]
+            } else if (timeFilter === 'monthly') {
+                const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+                const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
+                start = firstDay.toISOString().split('T')[0]
+                end = lastDay.toISOString().split('T')[0]
+            } else if (timeFilter === 'yearly') {
+                const firstDay = new Date(currentMonth.getFullYear(), 0, 1)
+                const lastDay = new Date(currentMonth.getFullYear(), 11, 31)
+                start = firstDay.toISOString().split('T')[0]
+                end = lastDay.toISOString().split('T')[0]
+            }
+
+            if (start) url += `startDate=${start}&`
+            if (end) url += `endDate=${end}&`
+
             const [transRes, projRes, vendorRes, clientRes] = await Promise.all([
-                fetch('/api/budgets'),
+                fetch(url),
                 fetch('/api/admin/projects'),
                 fetch('/api/vendors'),
                 fetch('/api/clients')
@@ -129,7 +165,8 @@ export default function BudgetPage() {
                     frequency: 'ONCE',
                     amount: '',
                     description: '',
-                    date: new Date().toISOString().split('T')[0]
+                    date: new Date().toISOString().split('T')[0],
+                    endDate: ''
                 })
                 fetchInitialData()
             }
@@ -142,7 +179,7 @@ export default function BudgetPage() {
         if (!confirm('ยืนยันการลบรายการนี้?')) return
         try {
             await fetch(`/api/budgets?id=${id}`, { method: 'DELETE' })
-            setTransactions(prev => prev.filter(t => t.id !== id))
+            fetchInitialData()
         } catch (err) {
             console.error(err)
         }
@@ -343,6 +380,24 @@ export default function BudgetPage() {
                                     <option value="INCOME">Income Only</option>
                                     <option value="EXPENSE">Expense Only</option>
                                 </select>
+                            </div>
+
+                            <div className="flex bg-white/[0.04] p-1 rounded-lg border border-white/10 ml-auto">
+                                {[
+                                    { id: 'all', label: 'All' },
+                                    { id: 'daily', label: 'Day' },
+                                    { id: 'weekly', label: 'Week' },
+                                    { id: 'monthly', label: 'Month' },
+                                    { id: 'yearly', label: 'Year' }
+                                ].map(f => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => setTimeFilter(f.id as any)}
+                                        className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${timeFilter === f.id ? 'bg-violet-600 text-white' : 'text-midnight-500 hover:text-white'}`}
+                                    >
+                                        {f.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -580,7 +635,7 @@ export default function BudgetPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Date</label>
+                                            <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Start Date</label>
                                             <input
                                                 type="date"
                                                 required
@@ -590,6 +645,18 @@ export default function BudgetPage() {
                                             />
                                         </div>
                                     </div>
+                                    {formData.frequency !== 'ONCE' && (
+                                        <div className="animate-in slide-in-from-top-2 duration-200">
+                                            <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">End Date (Optional)</label>
+                                            <input
+                                                type="date"
+                                                value={formData.endDate}
+                                                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]"
+                                            />
+                                            <p className="text-[9px] text-midnight-600 mt-1 ml-1">Leave empty for infinite recurring</p>
+                                        </div>
+                                    )}
                                     <div>
                                         <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Description</label>
                                         <input
