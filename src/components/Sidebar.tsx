@@ -19,14 +19,16 @@ import {
     ChevronLeft,
     ChevronRight,
     Wallet,
-    Building2
+    Building2,
+    Activity
 } from 'lucide-react'
 
 const navItems = [
     {
         label: 'MAIN',
         items: [
-            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+            { name: 'Projects Dashboard', href: '/dashboard', icon: LayoutDashboard },
+            { name: 'Stakeholders Dashboard', href: '/admin/dashboard/stakeholders', icon: Activity },
         ]
     },
     {
