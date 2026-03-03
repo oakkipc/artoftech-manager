@@ -141,3 +141,40 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }
 }
+// PATCH: Update a budget transaction
+export async function PATCH(request: Request) {
+    try {
+        const { id, projectId, amount, type, description, date, vendorId, clientId, frequency, endDate } = await request.json()
+
+        if (!id || !projectId || !amount || !type || !date) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+        }
+
+        const supabase = getAdminClient()
+
+        // Handle virtual IDs (e.g., id-date)
+        const realId = id.includes('-') && id.length > 36 ? id.split('-')[0] : id
+
+        const { data, error } = await supabase
+            .from('project_budgets')
+            .update({
+                project_id: projectId,
+                amount: parseFloat(amount),
+                type,
+                description,
+                date,
+                end_date: endDate || null,
+                vendor_id: vendorId || null,
+                client_id: clientId || null,
+                frequency: frequency || 'ONCE'
+            })
+            .eq('id', realId)
+            .select()
+            .single()
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ transaction: data })
+    } catch {
+        return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    }
+}

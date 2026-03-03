@@ -22,7 +22,10 @@ import {
     ChevronLeft,
     ChevronRight,
     Users,
-    Building2
+    Building2,
+    ChevronDown,
+    ArrowRight,
+    Edit2
 } from 'lucide-react'
 
 interface Transaction {
@@ -148,18 +151,21 @@ export default function BudgetPage() {
         }
     }
 
+    const [editingId, setEditingId] = useState<string | null>(null)
+
     const handleAddTransaction = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!formData.projectId || !formData.amount || submitting) return
         setSubmitting(true)
         try {
             const res = await fetch('/api/budgets', {
-                method: 'POST',
+                method: editingId ? 'PATCH' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(editingId ? { ...formData, id: editingId } : formData)
             })
             if (res.ok) {
                 setShowModal(false)
+                setEditingId(null)
                 setFormData({
                     ...formData,
                     frequency: 'ONCE',
@@ -173,6 +179,22 @@ export default function BudgetPage() {
         } finally {
             setSubmitting(false)
         }
+    }
+
+    const startEdit = (t: Transaction) => {
+        setEditingId(t.id)
+        setFormData({
+            projectId: t.project_id,
+            vendorId: t.vendor_id || '',
+            clientId: (t as any).client_id || '',
+            frequency: t.frequency || 'ONCE',
+            amount: t.amount.toString(),
+            type: t.type,
+            description: t.description || '',
+            date: t.date,
+            endDate: (t as any).end_date || ''
+        })
+        setShowModal(true)
     }
 
     const handleDelete = async (id: string) => {
@@ -459,7 +481,10 @@ export default function BudgetPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="flex justify-center">
+                                                    <div className="flex justify-center gap-2">
+                                                        <button onClick={() => startEdit(t)} className="p-2 text-midnight-700 hover:text-violet-400 transition-colors">
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
                                                         <button onClick={() => handleDelete(t.id)} className="p-2 text-midnight-700 hover:text-red-400 transition-colors">
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
@@ -535,9 +560,10 @@ export default function BudgetPage() {
                         <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                    <Plus className="w-5 h-5 text-violet-400" /> Add Transaction
+                                    {editingId ? <Edit2 className="w-5 h-5 text-violet-400" /> : <Plus className="w-5 h-5 text-violet-400" />}
+                                    {editingId ? 'Edit Transaction' : 'Add Transaction'}
                                 </h3>
-                                <button onClick={() => setShowModal(false)} className="p-1 text-midnight-500 hover:text-white transition-colors">
+                                <button onClick={() => { setShowModal(false); setEditingId(null) }} className="p-1 text-midnight-500 hover:text-white transition-colors">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
@@ -674,7 +700,7 @@ export default function BudgetPage() {
                                     disabled={submitting}
                                     className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-violet-600/20 active:scale-[0.98] disabled:opacity-50 mt-4 text-sm"
                                 >
-                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm Transaction'}
+                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : editingId ? 'Update Transaction' : 'Confirm Transaction'}
                                 </button>
                             </form>
                         </div>

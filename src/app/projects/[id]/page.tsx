@@ -28,7 +28,9 @@ import {
     Edit2,
     Wallet,
     TrendingUp,
-    TrendingDown
+    TrendingDown,
+    MessageSquare,
+    StickyNote
 } from 'lucide-react'
 
 interface ChecklistItem {
@@ -81,6 +83,14 @@ interface ProjectLink {
     type: string
 }
 
+interface ProjectNote {
+    id: string
+    project_id: string
+    content: string
+    created_at: string
+    author_id: string | null
+}
+
 const COLUMNS = [
     { key: 'TODO', label: 'To Do', color: 'border-blue-500/30', dotColor: 'bg-blue-400', bgHover: 'bg-blue-500/5' },
     { key: 'IN_PROGRESS', label: 'In Progress', color: 'border-amber-500/30', dotColor: 'bg-amber-400', bgHover: 'bg-amber-500/5' },
@@ -119,6 +129,12 @@ export default function ProjectDetailPage() {
     // Budget
     const [budgetTransactions, setBudgetTransactions] = useState<any[]>([])
 
+    // Project Notes
+    const [notes, setNotes] = useState<ProjectNote[]>([])
+    const [newNote, setNewNote] = useState('')
+    const [showNotes, setShowNotes] = useState(false)
+    const [currentUser, setCurrentUser] = useState<any>(null)
+
     // Drag state
     const [draggedTask, setDraggedTask] = useState<Task | null>(null)
     const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
@@ -137,19 +153,21 @@ export default function ProjectDetailPage() {
     useEffect(() => {
         const userStr = localStorage.getItem('user')
         if (!userStr) { router.push('/login'); return }
+        setCurrentUser(JSON.parse(userStr))
         fetchAll()
     }, [projectId])
 
     const fetchAll = async () => {
         try {
-            const [projectRes, tasksRes, membersRes, linksRes, catsRes, allCheckRes, budgetRes] = await Promise.all([
+            const [projectRes, tasksRes, membersRes, linksRes, catsRes, allCheckRes, budgetRes, notesRes] = await Promise.all([
                 fetch(`/api/admin/projects?id=${projectId}`),
                 fetch(`/api/tasks?projectId=${projectId}`),
                 fetch(`/api/admin/projects/users?projectId=${projectId}`),
                 fetch(`/api/projects/links?projectId=${projectId}`),
                 fetch(`/api/projects/categories?projectId=${projectId}`),
                 fetch(`/api/checklists?projectId=${projectId}`),
-                fetch(`/api/budgets?projectId=${projectId}`)
+                fetch(`/api/budgets?projectId=${projectId}`),
+                fetch(`/api/projects/notes?projectId=${projectId}`)
             ])
             const projectData = await projectRes.json()
             const tasksData = await tasksRes.json()
@@ -166,6 +184,8 @@ export default function ProjectDetailPage() {
             if (catsData.categories) setCategories(catsData.categories)
             if (allCheckData.checklists) setAllChecklists(allCheckData.checklists)
             if (budgetData.transactions) setBudgetTransactions(budgetData.transactions)
+            const notesData = await notesRes.json()
+            if (notesData.notes) setNotes(notesData.notes)
         } catch (err) {
             console.error(err)
         } finally {
@@ -362,6 +382,31 @@ export default function ProjectDetailPage() {
         if (!confirm('ต้องการลบลิ้งค์นี้จริงหรือไม่?')) return
         setProjectLinks(prev => prev.filter(l => l.id !== id))
         try { await fetch(`/api/projects/links?id=${id}`, { method: 'DELETE' }) } catch { }
+    }
+
+    // Project notes
+    const handleAddNote = async () => {
+        if (!newNote.trim()) return
+        try {
+            const res = await fetch('/api/projects/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId, content: newNote, authorId: currentUser?.id })
+            })
+            const data = await res.json()
+            if (data.note) {
+                setNotes(prev => [data.note, ...prev])
+                setNewNote('')
+            }
+        } catch (err) { console.error(err) }
+    }
+
+    const handleDeleteNote = async (id: string) => {
+        if (!confirm('ต้องการลบโน๊ตนี้จริงหรือไม่?')) return
+        try {
+            await fetch(`/api/projects/notes?id=${id}`, { method: 'DELETE' })
+            setNotes(prev => prev.filter(n => n.id !== id))
+        } catch (err) { console.error(err) }
     }
 
     // Helpers
@@ -737,6 +782,54 @@ export default function ProjectDetailPage() {
                                 className="flex items-center gap-1 px-3 py-1.5 text-xs text-midnight-500 hover:text-violet-400 border border-dashed border-white/[0.06] hover:border-violet-500/20 rounded-lg transition-all">
                                 <Plus className="w-3.5 h-3.5" /> Add Link
                             </button>
+                        )}
+                    </div>
+
+                    {/* Project Notes Section */}
+                    <div className="mb-6 bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden">
+                        <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between">
+                            <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                                <StickyNote className="w-3.5 h-3.5 text-amber-400" /> Project Notes
+                            </h3>
+                            <button onClick={() => setShowNotes(!showNotes)} className="text-[10px] font-bold text-violet-400 hover:text-violet-300 uppercase tracking-wider">
+                                {showNotes ? 'Hide' : `View All (${notes.length})`}
+                            </button>
+                        </div>
+                        {showNotes && (
+                            <div className="p-4 space-y-3">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newNote}
+                                        onChange={(e) => setNewNote(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote() }}
+                                        className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/40"
+                                        placeholder="Add a note..."
+                                    />
+                                    <button onClick={handleAddNote} className="px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors">
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                    {notes.map(note => (
+                                        <div key={note.id} className="group p-3 bg-white/[0.03] border border-white/[0.04] rounded-lg hover:border-white/[0.1] transition-all">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <p className="text-sm text-midnight-300 flex-1 whitespace-pre-wrap">{note.content}</p>
+                                                <button onClick={() => handleDeleteNote(note.id)} className="p-1 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                            <div className="mt-2 flex items-center gap-2 text-[10px] text-midnight-600">
+                                                <Clock className="w-3 h-3" />
+                                                {new Date(note.created_at).toLocaleString('th-TH')}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {notes.length === 0 && (
+                                        <p className="text-center text-midnight-600 text-xs py-4">No notes yet</p>
+                                    )}
+                                </div>
+                            </div>
                         )}
                     </div>
 
