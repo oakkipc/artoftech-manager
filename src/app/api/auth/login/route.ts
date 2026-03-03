@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import * as bcrypt from 'bcryptjs'
 
+import { rateLimit } from '@/lib/rate-limit'
+
 const getAdminClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -16,6 +18,16 @@ const getAdminClient = () => {
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json()
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
+
+    // 1. Rate Limit by IP (prevent bulk attacks)
+    const ipLimit = await rateLimit(`login:ip:${ip}`, 5, 900) // 5 attempts per 15 mins
+    if (!ipLimit.success) {
+      return NextResponse.json(
+        { error: `มีการลองเข้าระบบมากเกินไป กรุณาลองใหม่ในอีก ${Math.ceil(ipLimit.reset / 60)} นาที` },
+        { status: 429 }
+      )
+    }
 
     if (!email || !password) {
       return NextResponse.json(
@@ -23,6 +35,16 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    // 2. Rate Limit by Email (prevent targeted brute force)
+    const emailLimit = await rateLimit(`login:email:${email}`, 5, 900) // 5 attempts per 15 mins
+    if (!emailLimit.success) {
+      return NextResponse.json(
+        { error: `มีการลองเข้าระบบด้วยอีเมลนี้มากเกินไป กรุณาลองใหม่ในอีก ${Math.ceil(emailLimit.reset / 60)} นาที` },
+        { status: 429 }
+      )
+    }
+
 
     const supabase = getAdminClient()
 

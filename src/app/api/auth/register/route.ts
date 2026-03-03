@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import * as bcrypt from 'bcryptjs'
 
+import { rateLimit } from '@/lib/rate-limit'
+
 // Admin client for server-side operations
 const getAdminClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -12,6 +14,18 @@ const getAdminClient = () => {
 export async function POST(request: Request) {
   try {
     const { email, password, name } = await request.json()
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
+
+    // Rate Limit by IP (prevent automated spam registrations)
+    // 3 registrations per 6 hours (21600 seconds)
+    const ipLimit = await rateLimit(`register:ip:${ip}`, 3, 21600)
+    if (!ipLimit.success) {
+      return NextResponse.json(
+        { error: 'มีการถลองสมัครสมาชิกมากเกินไปจาก IP นี้ กรุณาลองใหม่ในภายหลัง' },
+        { status: 429 }
+      )
+    }
+
 
     if (!email || !password || !name) {
       return NextResponse.json(
