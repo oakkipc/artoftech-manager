@@ -360,20 +360,20 @@ export default function ProjectDetailPage() {
 
             <main className="flex-1 min-w-0 flex flex-col">
                 {/* Top bar */}
-                <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-8 py-4">
-                    <div className="flex items-center justify-between">
+                <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-4 sm:px-8 py-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <Link href="/dashboard" className="p-1.5 text-midnight-500 hover:text-white rounded-lg hover:bg-white/[0.04] transition-all">
+                            <Link href="/dashboard" className="hidden sm:flex p-1.5 text-midnight-500 hover:text-white rounded-lg hover:bg-white/[0.04] transition-all">
                                 <ArrowLeft className="w-5 h-5" />
                             </Link>
-                            <div>
-                                <h1 className="text-xl font-bold text-white">{project?.name || 'Project'}</h1>
-                                <p className="text-sm text-midnight-500">{project?.description || 'Kanban Board'}</p>
+                            <div className="pl-12 sm:pl-0">
+                                <h1 className="text-xl font-bold text-white truncate max-w-[200px] sm:max-w-none">{project?.name || 'Project'}</h1>
+                                <p className="text-sm text-midnight-500 truncate max-w-[250px] sm:max-w-none">{project?.description || 'Kanban Board'}</p>
                             </div>
                         </div>
                         {members.length > 0 && (
-                            <div className="flex items-center gap-3">
-                                <span className="text-[11px] font-bold text-midnight-600 uppercase tracking-wider">Team</span>
+                            <div className="flex items-center gap-3 pl-12 sm:pl-0">
+                                <span className="text-[11px] font-bold text-midnight-600 uppercase tracking-wider hidden xs:block">Team</span>
                                 <div className="flex items-center -space-x-2">
                                     {members.slice(0, 5).map((m) => (
                                         <div key={m.id} className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border-2 border-[#0a0a1a] flex items-center justify-center text-violet-400 text-xs font-bold cursor-default" title={`${m.users?.name} (${m.role})`}>
@@ -402,7 +402,7 @@ export default function ProjectDetailPage() {
                         const completion = total > 0 ? Math.round((done / total) * 100) : 0
 
                         return (
-                            <div className="mb-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                            <div className="mb-5 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
                                 <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-2.5">
                                     <div className="w-8 h-8 bg-cyan-500/10 rounded-lg flex items-center justify-center shrink-0">
                                         <ListTodo className="w-4 h-4 text-cyan-400" />
@@ -474,7 +474,7 @@ export default function ProjectDetailPage() {
 
                     {/* Dashboard Charts Section */}
                     {tasks.length > 0 && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                             {/* Donut 1: Checklist by Category (Remaining) */}
                             {categories.length > 0 && (() => {
                                 const catData = categories.map(cat => {
@@ -819,7 +819,7 @@ export default function ProjectDetailPage() {
                             </div>
 
                             {/* Due Date, Assignee & Category row */}
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                         <Calendar className="w-3.5 h-3.5" /> Due Date

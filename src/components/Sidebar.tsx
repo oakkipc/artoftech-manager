@@ -48,7 +48,7 @@ interface PinnedProject {
 export function Sidebar() {
     const pathname = usePathname()
     const [user, setUser] = useState<any>(null)
-    const [collapsed, setCollapsed] = useState(false)
+    const [isOpen, setIsOpen] = useState(false)
     const [pinnedProjects, setPinnedProjects] = useState<PinnedProject[]>([])
 
     useEffect(() => {
@@ -90,17 +90,22 @@ export function Sidebar() {
         <>
             {/* Mobile toggle */}
             <button
-                onClick={() => setCollapsed(!collapsed)}
-                className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-[#0a0a1a] rounded-xl border border-white/10"
+                onClick={() => setIsOpen(!isOpen)}
+                className={`
+                    fixed top-4 left-4 z-50 lg:hidden p-2.5 
+                    bg-[#0a0a1a]/80 backdrop-blur-lg rounded-xl border border-white/10
+                    text-white transition-all duration-300
+                    ${isOpen ? 'left-[230px] rotate-90' : 'left-4 rotate-0'}
+                `}
             >
-                {collapsed ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+                {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
             {/* Overlay for mobile */}
-            {collapsed && (
+            {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-                    onClick={() => setCollapsed(false)}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden transition-opacity duration-300"
+                    onClick={() => setIsOpen(false)}
                 />
             )}
 
@@ -109,8 +114,8 @@ export function Sidebar() {
         w-[280px] flex flex-col
         bg-[#0a0a1a]/95 backdrop-blur-2xl
         border-r border-white/[0.06]
-        transition-transform duration-300
-        ${collapsed ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
                 {/* Brand */}
                 <div className="p-6 pb-4">
@@ -139,7 +144,7 @@ export function Sidebar() {
                                         <Link
                                             key={item.name}
                                             href={item.href}
-                                            onClick={() => setCollapsed(false)}
+                                            onClick={() => setIsOpen(false)}
                                             className={`
                         flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 group/item
                         ${isActive
@@ -174,7 +179,7 @@ export function Sidebar() {
                                                 <Link
                                                     key={project.id}
                                                     href={`/projects/${project.id}`}
-                                                    onClick={() => setCollapsed(false)}
+                                                    onClick={() => setIsOpen(false)}
                                                     className={`
                                 flex items-center justify-between px-4 py-2 rounded-xl transition-all duration-200 group/item
                                 ${isActive

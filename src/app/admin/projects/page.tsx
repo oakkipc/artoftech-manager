@@ -197,13 +197,13 @@ export default function AdminProjectsPage() {
 
       <main className="flex-1 min-w-0">
         {/* Top bar */}
-        <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-8 py-4">
-          <div className="flex items-center justify-between">
+        <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-4 sm:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl font-bold text-white">Projects</h1>
-              <p className="text-sm text-midnight-500">Manage team projects and members</p>
+              <h1 className="text-xl font-bold text-white pl-12 lg:pl-0">Projects</h1>
+              <p className="text-sm text-midnight-500 pl-12 lg:pl-0">Manage team projects and members</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-midnight-600" />
                 <input
@@ -211,12 +211,12 @@ export default function AdminProjectsPage() {
                   placeholder="Search projects..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-56 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white placeholder-midnight-600 focus:outline-none focus:border-violet-500/40 transition-colors"
+                  className="pl-10 pr-4 py-2 w-full sm:w-56 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white placeholder-midnight-600 focus:outline-none focus:border-violet-500/40 transition-colors"
                 />
               </div>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 New Project
@@ -225,7 +225,7 @@ export default function AdminProjectsPage() {
           </div>
         </div>
 
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {/* Project Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {sortedProjects.map((project) => (
