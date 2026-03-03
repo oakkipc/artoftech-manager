@@ -100,7 +100,13 @@ export default function VendorsPage() {
                     notes: ''
                 })
                 fetchVendors()
+            } else {
+                const error = await res.json()
+                alert(`Error: ${error.error || 'Failed to save vendor'}`)
             }
+        } catch (err: any) {
+            console.error(err)
+            alert('An unexpected error occurred')
         } finally {
             setSubmitting(false)
         }

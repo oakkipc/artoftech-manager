@@ -101,7 +101,13 @@ export default function ClientsPage() {
                     notes: ''
                 })
                 fetchClients()
+            } else {
+                const error = await res.json()
+                alert(`Error: ${error.error || 'Failed to save client'}`)
             }
+        } catch (err) {
+            console.error(err)
+            alert('An unexpected error occurred')
         } finally {
             setSubmitting(false)
         }

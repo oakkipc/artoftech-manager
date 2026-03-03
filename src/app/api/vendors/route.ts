@@ -27,14 +27,23 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { name, contact_person, email, phone, address, category } = body
+        const { name, contact_person, email, phone, address, category, rating, notes } = body
 
         if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
         const supabase = getAdminClient()
         const { data, error } = await supabase
             .from('vendors')
-            .insert({ name, contact_person, email, phone, address, category })
+            .insert({
+                name,
+                contact_person,
+                email,
+                phone,
+                address,
+                category,
+                rating: rating || 0,
+                notes
+            })
             .select()
             .single()
 
@@ -49,14 +58,23 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
     try {
         const body = await request.json()
-        const { id, ...updates } = body
+        const { id, name, contact_person, email, phone, address, category, rating, notes } = body
 
         if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 })
 
         const supabase = getAdminClient()
         const { data, error } = await supabase
             .from('vendors')
-            .update(updates)
+            .update({
+                name,
+                contact_person,
+                email,
+                phone,
+                address,
+                category,
+                rating,
+                notes
+            })
             .eq('id', id)
             .select()
             .single()
