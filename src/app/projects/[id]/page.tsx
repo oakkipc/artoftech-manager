@@ -472,76 +472,157 @@ export default function ProjectDetailPage() {
                         )
                     })()}
 
-                    {/* Category Pie Chart */}
-                    {tasks.length > 0 && categories.length > 0 && (() => {
-                        // Build map: taskId → categoryId
-                        const taskCatMap: Record<string, string | null> = {}
-                        tasks.forEach(t => { taskCatMap[t.id] = t.category_id })
+                    {/* Dashboard Charts Section */}
+                    {tasks.length > 0 && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+                            {/* Donut 1: Checklist by Category (Remaining) */}
+                            {categories.length > 0 && (() => {
+                                const catData = categories.map(cat => {
+                                    const catTaskIds = tasks.filter(t => t.category_id === cat.id).map(t => t.id)
+                                    const catChecklists = allChecklists.filter(c => catTaskIds.includes(c.task_id))
+                                    const remaining = catChecklists.filter(c => !c.completed).length
+                                    const total = catChecklists.length
+                                    return { name: cat.name, color: cat.color, remaining, total, taskCount: catTaskIds.length }
+                                }).filter(d => d.taskCount > 0)
 
-                        const catData = categories.map(cat => {
-                            const catTaskIds = tasks.filter(t => t.category_id === cat.id).map(t => t.id)
-                            const catChecklists = allChecklists.filter(c => catTaskIds.includes(c.task_id))
-                            const remaining = catChecklists.filter(c => !c.completed).length
-                            const total = catChecklists.length
-                            return { name: cat.name, color: cat.color, remaining, total, taskCount: catTaskIds.length }
-                        }).filter(d => d.taskCount > 0)
+                                const uncatTaskIds = tasks.filter(t => !t.category_id).map(t => t.id)
+                                if (uncatTaskIds.length > 0) {
+                                    const uncatChecklists = allChecklists.filter(c => uncatTaskIds.includes(c.task_id))
+                                    catData.push({ name: 'Uncategorized', color: '#4b5563', remaining: uncatChecklists.filter(c => !c.completed).length, total: uncatChecklists.length, taskCount: uncatTaskIds.length })
+                                }
 
-                        const uncatTaskIds = tasks.filter(t => !t.category_id).map(t => t.id)
-                        if (uncatTaskIds.length > 0) {
-                            const uncatChecklists = allChecklists.filter(c => uncatTaskIds.includes(c.task_id))
-                            catData.push({ name: 'Uncategorized', color: '#4b5563', remaining: uncatChecklists.filter(c => !c.completed).length, total: uncatChecklists.length, taskCount: uncatTaskIds.length })
-                        }
+                                const totalRemaining = catData.reduce((s, d) => s + d.remaining, 0)
+                                if (totalRemaining === 0 && allChecklists.length === 0) return null
 
-                        const totalRemaining = catData.reduce((s, d) => s + d.remaining, 0)
-                        const totalAll = catData.reduce((s, d) => s + d.total, 0)
-                        if (totalAll === 0) return null
+                                const radius = 40, cx = 50, cy = 50, circumference = 2 * Math.PI * radius
+                                let offset = 0
 
-                        // Build SVG donut segments (by remaining count)
-                        const radius = 50
-                        const cx = 60, cy = 60
-                        const circumference = 2 * Math.PI * radius
-                        let offset = 0
-
-                        return (
-                            <div className="mb-5 bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex items-center gap-6">
-                                <div className="shrink-0">
-                                    <svg width="120" height="120" viewBox="0 0 120 120">
-                                        {catData.filter(d => d.remaining > 0).map((d, i) => {
-                                            const pct = d.remaining / totalRemaining
-                                            const dashLen = pct * circumference
-                                            const dashOffset = -offset
-                                            offset += dashLen
-                                            return (
-                                                <circle key={i} cx={cx} cy={cy} r={radius} fill="none"
-                                                    stroke={d.color} strokeWidth="18"
-                                                    strokeDasharray={`${dashLen} ${circumference - dashLen}`}
-                                                    strokeDashoffset={dashOffset}
-                                                    transform={`rotate(-90 ${cx} ${cy})`}
-                                                    className="transition-all duration-500" />
-                                            )
-                                        })}
-                                        {totalRemaining === 0 && (
-                                            <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#10b981" strokeWidth="18" opacity="0.3" />
-                                        )}
-                                        <text x={cx} y={cy - 4} textAnchor="middle" className="fill-white text-lg font-bold">{totalRemaining}</text>
-                                        <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[9px]">remaining</text>
-                                    </svg>
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-2">Checklist by Category</p>
-                                    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                                        {catData.map((d, i) => (
-                                            <div key={i} className="flex items-center gap-2">
-                                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                                                <span className="text-xs text-white font-medium truncate">{d.name}</span>
-                                                <span className="text-xs text-midnight-500 ml-auto">{d.remaining}/{d.total}</span>
+                                return (
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-col">
+                                        <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-4">Remaining by Category</p>
+                                        <div className="flex items-center gap-4 flex-1">
+                                            <div className="shrink-0">
+                                                <svg width="100" height="100" viewBox="0 0 100 100">
+                                                    {catData.filter(d => d.remaining > 0).map((d, i) => {
+                                                        const pct = d.remaining / totalRemaining
+                                                        const dashLen = pct * circumference
+                                                        const dashOffset = -offset
+                                                        offset += dashLen
+                                                        return (
+                                                            <circle key={i} cx={cx} cy={cy} r={radius} fill="none" stroke={d.color} strokeWidth="12"
+                                                                strokeDasharray={`${dashLen} ${circumference - dashLen}`} strokeDashoffset={dashOffset}
+                                                                transform={`rotate(-90 ${cx} ${cy})`} className="transition-all duration-500" />
+                                                        )
+                                                    })}
+                                                    {totalRemaining === 0 && <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#10b981" strokeWidth="12" opacity="0.3" />}
+                                                    <text x={cx} y={cy - 2} textAnchor="middle" className="fill-white text-base font-bold">{totalRemaining}</text>
+                                                    <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[8px]">remaining</text>
+                                                </svg>
                                             </div>
-                                        ))}
+                                            <div className="flex-1 space-y-1.5 max-h-[100px] overflow-y-auto custom-scrollbar pr-1">
+                                                {catData.map((d, i) => (
+                                                    <div key={i} className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                                                        <span className="text-[10px] text-white font-medium truncate flex-1">{d.name}</span>
+                                                        <span className="text-[10px] text-midnight-500">{d.remaining}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        )
-                    })()}
+                                )
+                            })()}
+
+                            {/* Donut 2: Overall Checklist Completion */}
+                            {allChecklists.length > 0 && (() => {
+                                const completed = allChecklists.filter(c => c.completed).length
+                                const total = allChecklists.length
+                                const pct = completed / total
+                                const radius = 40, cx = 50, cy = 50, circumference = 2 * Math.PI * radius
+
+                                return (
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-col">
+                                        <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-4">Overall Completion</p>
+                                        <div className="flex items-center gap-4 flex-1">
+                                            <div className="shrink-0">
+                                                <svg width="100" height="100" viewBox="0 0 100 100">
+                                                    <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="12" className="text-white/[0.05]" />
+                                                    <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#8b5cf6" strokeWidth="12"
+                                                        strokeDasharray={`${pct * circumference} ${circumference}`}
+                                                        transform={`rotate(-90 ${cx} ${cy})`} className="transition-all duration-500" strokeLinecap="round" />
+                                                    <text x={cx} y={cy - 2} textAnchor="middle" className="fill-white text-base font-bold">{completed}/{total}</text>
+                                                    <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 text-[8px]">completed</text>
+                                                </svg>
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="bg-white/[0.03] rounded-lg p-2 border border-white/[0.04]">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-[10px] text-midnight-500 font-medium">Progress</span>
+                                                        <span className="text-[10px] text-violet-400 font-bold">{Math.round(pct * 100)}%</span>
+                                                    </div>
+                                                    <div className="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                                                        <div className="h-full bg-violet-500 rounded-full" style={{ width: `${pct * 100}%` }} />
+                                                    </div>
+                                                </div>
+                                                <p className="mt-2 text-[9px] text-midnight-600 italic text-center">Total items in all tasks</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })()}
+
+                            {/* Bar Chart: Tasks by Category & Status */}
+                            {categories.length > 0 && (() => {
+                                const barData = categories.map(cat => {
+                                    const catTasks = tasks.filter(t => t.category_id === cat.id)
+                                    return {
+                                        name: cat.name,
+                                        todo: catTasks.filter(t => t.status === 'TODO').length,
+                                        inprogress: catTasks.filter(t => t.status === 'IN_PROGRESS').length,
+                                        done: catTasks.filter(t => t.status === 'DONE').length,
+                                        total: catTasks.length
+                                    }
+                                }).filter(d => d.total > 0)
+
+                                const uncatTasks = tasks.filter(t => !t.category_id)
+                                if (uncatTasks.length > 0) {
+                                    barData.push({
+                                        name: 'Uncat',
+                                        todo: uncatTasks.filter(t => t.status === 'TODO').length,
+                                        inprogress: uncatTasks.filter(t => t.status === 'IN_PROGRESS').length,
+                                        done: uncatTasks.filter(t => t.status === 'DONE').length,
+                                        total: uncatTasks.length
+                                    })
+                                }
+
+                                const max = Math.max(...barData.map(d => d.total), 1)
+
+                                return (
+                                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex flex-col">
+                                        <p className="text-[10px] text-midnight-500 font-bold uppercase tracking-wider mb-4">Tasks by Status</p>
+                                        <div className="flex-1 flex flex-col justify-end space-y-2">
+                                            {barData.map((d, i) => (
+                                                <div key={i} className="flex items-center gap-2">
+                                                    <span className="text-[9px] text-midnight-400 w-10 truncate text-right shrink-0">{d.name}</span>
+                                                    <div className="flex-1 h-3 flex rounded-sm overflow-hidden bg-white/[0.03]">
+                                                        <div style={{ width: `${(d.todo / max) * 100}%` }} className="bg-blue-500/60" title={`Todo: ${d.todo}`} />
+                                                        <div style={{ width: `${(d.inprogress / max) * 100}%` }} className="bg-amber-500/60" title={`Active: ${d.inprogress}`} />
+                                                        <div style={{ width: `${(d.done / max) * 100}%` }} className="bg-emerald-500/60" title={`Done: ${d.done}`} />
+                                                    </div>
+                                                    <span className="text-[9px] text-midnight-600 w-4 shrink-0">{d.total}</span>
+                                                </div>
+                                            ))}
+                                            <div className="flex justify-center gap-3 pt-2 border-t border-white/[0.04]">
+                                                <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500/60" /><span className="text-[8px] text-midnight-600">Todo</span></div>
+                                                <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500/60" /><span className="text-[8px] text-midnight-600">Active</span></div>
+                                                <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" /><span className="text-[8px] text-midnight-600">Done</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })()}
+                        </div>
+                    )}
                     {/* Project Links */}
                     <div className="mb-5 flex flex-wrap items-center gap-2">
                         {projectLinks.map((link) => (
