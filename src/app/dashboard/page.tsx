@@ -17,7 +17,10 @@ import {
     Users,
     Calendar,
     User,
-    CircleDot
+    CircleDot,
+    Wallet,
+    ArrowUpRight,
+    ArrowDownRight
 } from 'lucide-react'
 
 interface TaskItem {
@@ -55,6 +58,11 @@ interface DashboardStats {
     totalTodo: number
     totalOverdue: number
     completionRate: number
+    cashflow?: {
+        revenue: number
+        expense: number
+        balance: number
+    } | null
 }
 
 export default function DashboardPage() {
@@ -122,6 +130,35 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="p-8">
+                    {/* Cashflow Row (Super Admin Only) */}
+                    {currentUser?.role === 'SUPERADMIN' && stats?.cashflow && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-2xl p-5 group">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Revenue (This Month)</p>
+                                    <ArrowUpRight className="w-4 h-4 text-emerald-500/40 group-hover:text-emerald-500 transition-colors" />
+                                </div>
+                                <h2 className="text-2xl font-black text-white">฿{(stats.cashflow.revenue).toLocaleString()}</h2>
+                            </div>
+                            <div className="bg-red-500/5 border border-red-500/15 rounded-2xl p-5 group">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Expenses (This Month)</p>
+                                    <ArrowDownRight className="w-4 h-4 text-red-500/40 group-hover:text-red-500 transition-colors" />
+                                </div>
+                                <h2 className="text-2xl font-black text-white">฿{(stats.cashflow.expense).toLocaleString()}</h2>
+                            </div>
+                            <div className="bg-violet-500/5 border border-violet-500/15 rounded-2xl p-5 group">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Balance</p>
+                                    <Wallet className="w-4 h-4 text-violet-500/40 group-hover:text-violet-500 transition-colors" />
+                                </div>
+                                <h2 className={`text-2xl font-black ${stats.cashflow.balance >= 0 ? 'text-white' : 'text-red-400'}`}>
+                                    ฿{(stats.cashflow.balance).toLocaleString()}
+                                </h2>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Stats Row */}
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
                         <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex items-center gap-3">

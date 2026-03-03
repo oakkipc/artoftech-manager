@@ -142,6 +142,53 @@ export async function GET(request: Request) {
                 }))
             : []
 
+        // Financial Stats (for SUPERADMIN only)
+        let financialStats = null
+        if (role === 'SUPERADMIN') {
+            const { data: budgetData } = await supabase
+                .from('project_budgets')
+                .select('amount, type, frequency, date, end_date')
+
+            if (budgetData) {
+                // Calculation logic similar to stakeholders dashboard (current month view)
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+
+                let revenue = 0
+                let expense = 0
+
+                budgetData.forEach(t => {
+                    if (t.frequency === 'ONCE') {
+                        const d = new Date(t.date)
+                        if (d >= startOfMonth && d <= endOfMonth) {
+                            if (t.type === 'INCOME') revenue += Number(t.amount)
+                            else expense += Number(t.amount)
+                        }
+                    } else {
+                        let current = new Date(t.date)
+                        const tEnd = t.end_date ? new Date(t.end_date) : endOfMonth
+                        const limit = tEnd > endOfMonth ? endOfMonth : tEnd
+
+                        while (current <= limit) {
+                            if (current >= startOfMonth) {
+                                if (t.type === 'INCOME') revenue += Number(t.amount)
+                                else expense += Number(t.amount)
+                            }
+                            if (t.frequency === 'MONTHLY') current.setMonth(current.getMonth() + 1)
+                            else if (t.frequency === 'YEARLY') current.setFullYear(current.getFullYear() + 1)
+                            else break
+                        }
+                    }
+                })
+
+                financialStats = {
+                    revenue,
+                    expense,
+                    balance: revenue - expense
+                }
+            }
+        }
+
         return NextResponse.json({
             projects: projectsWithCounts,
             stats: {
@@ -151,7 +198,8 @@ export async function GET(request: Request) {
                 totalInProgress,
                 totalTodo,
                 totalOverdue,
-                completionRate: totalTasks > 0 ? Math.round((totalDone / totalTasks) * 100) : 0
+                completionRate: totalTasks > 0 ? Math.round((totalDone / totalTasks) * 100) : 0,
+                cashflow: financialStats
             },
             upcomingTasks,
             overdueTasks,
