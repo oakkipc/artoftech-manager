@@ -1134,54 +1134,71 @@ export default function ProjectDetailPage() {
                                                     if (e.key === 'Enter') handleSaveTaskTitle()
                                                     if (e.key === 'Escape') setEditingTaskTitle(false)
                                                 }}
-                                                className="flex-1 bg-white/[0.04] border border-violet-500/40 rounded-lg px-3 py-1 text-lg font-bold text-white focus:outline-none"
+                                                className="flex-1 bg-white/[0.04] border border-violet-500/40 rounded-lg px-3 py-1.5 text-lg font-bold text-white focus:outline-none"
                                                 autoFocus
                                             />
-                                            <button onClick={handleSaveTaskTitle} className="p-1.5 text-emerald-400 hover:text-emerald-300">
+                                            <button onClick={handleSaveTaskTitle} className="p-1.5 bg-emerald-500 hover:bg-emerald-400 text-midnight-950 rounded-lg transition-colors">
                                                 <Check className="w-5 h-5" />
-                                            </button>
-                                            <button onClick={() => setEditingTaskTitle(false)} className="p-1.5 text-midnight-500 hover:text-white">
-                                                <X className="w-5 h-5" />
                                             </button>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2 group/title">
-                                            <h2 className="text-lg font-bold text-white cursor-pointer hover:text-violet-400 transition-colors"
+                                            <h2 className="text-xl font-bold text-white cursor-pointer hover:text-violet-400 transition-colors"
                                                 onClick={() => { setEditingTaskTitle(true); setTempTaskTitle(selectedTask.title) }}>
                                                 {selectedTask.title}
                                             </h2>
                                             <button onClick={() => { setEditingTaskTitle(true); setTempTaskTitle(selectedTask.title) }}
                                                 className="p-1 text-midnight-600 hover:text-violet-400 opacity-0 group-hover/title:opacity-100 transition-opacity">
-                                                <Edit2 className="w-3.5 h-3.5" />
+                                                <Edit2 className="w-4 h-4" />
                                             </button>
                                         </div>
                                     )}
-                                    <p className="text-xs text-midnight-600 mt-1">
-                                        {COLUMNS.find(c => c.key === selectedTask.status)?.label}
-                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className={`w-2 h-2 rounded-full ${COLUMNS.find(c => c.key === selectedTask.status)?.dotColor}`} />
+                                        <p className="text-xs text-midnight-500 font-medium uppercase tracking-wider">
+                                            {COLUMNS.find(c => c.key === selectedTask.status)?.label}
+                                        </p>
+                                    </div>
                                 </div>
-                                <button onClick={() => setSelectedTask(null)} className="p-1.5 text-midnight-500 hover:text-white rounded-lg hover:bg-white/[0.04]">
-                                    <X className="w-5 h-5" />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => {
+                                            // Handle global save if needed, most fields now auto-save 
+                                            // but we show this for user confidence as requested.
+                                            setSelectedTask(null)
+                                        }}
+                                        className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-violet-500/10 flex items-center gap-2"
+                                    >
+                                        <Check className="w-4 h-4" /> Save & Close
+                                    </button>
+                                    <button onClick={() => setSelectedTask(null)} className="p-2 text-midnight-500 hover:text-white rounded-xl hover:bg-white/[0.04] transition-colors">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="p-6 space-y-6">
                                 {/* Description */}
                                 <div>
-                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2">Description</h4>
+                                    <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+                                        Description
+                                        {!editingDescription && <span className="text-[9px] text-midnight-700 normal-case font-medium">Click to edit</span>}
+                                    </h4>
                                     {editingDescription ? (
                                         <div>
                                             <textarea value={tempDescription} onChange={(e) => setTempDescription(e.target.value)}
-                                                className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm placeholder-midnight-700 focus:outline-none focus:border-violet-500/40 h-20 resize-none" placeholder="Add description..." autoFocus />
+                                                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.1] rounded-xl text-white text-sm placeholder-midnight-700 focus:outline-none focus:border-violet-500/40 h-28 resize-none transition-all" placeholder="Add detailed description..." autoFocus />
                                             <div className="flex gap-2 mt-2">
-                                                <button onClick={handleSaveDescription} className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-md">Save</button>
-                                                <button onClick={() => setEditingDescription(false)} className="px-3 py-1 text-midnight-500 hover:text-white text-xs">Cancel</button>
+                                                <button onClick={handleSaveDescription} className="px-4 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-lg transition-colors shadow-lg shadow-violet-500/10 flex items-center gap-1.5">
+                                                    <Check className="w-3.5 h-3.5" /> Save Description
+                                                </button>
+                                                <button onClick={() => setEditingDescription(false)} className="px-4 py-1.5 text-midnight-500 hover:text-white text-xs font-medium rounded-lg hover:bg-white/5">Cancel</button>
                                             </div>
                                         </div>
                                     ) : (
                                         <div onClick={() => { setEditingDescription(true); setTempDescription(selectedTask.description || '') }}
-                                            className="px-3 py-2 bg-white/[0.03] border border-white/[0.04] rounded-lg text-sm text-midnight-400 cursor-pointer hover:border-white/[0.08] min-h-[40px] transition-colors">
-                                            {selectedTask.description || 'Click to add description...'}
+                                            className="px-4 py-3 bg-white/[0.03] border border-white/[0.04] rounded-xl text-sm text-midnight-300 cursor-pointer hover:border-white/[0.1] min-h-[60px] transition-all hover:bg-white/[0.04] leading-relaxed">
+                                            {selectedTask.description || 'Add a detailed description for this task...'}
                                         </div>
                                     )}
                                 </div>
@@ -1200,7 +1217,7 @@ export default function ProjectDetailPage() {
                                         <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                                             <Users className="w-3.5 h-3.5" /> Assignees
                                         </h4>
-                                        <div className="space-y-2">
+                                        <div className="grid grid-cols-1 gap-1.5">
                                             {members.map((m) => {
                                                 const isAssigned = (selectedTask.assignees || []).some(u => u.id === m.user_id)
                                                 return (
@@ -1208,8 +1225,8 @@ export default function ProjectDetailPage() {
                                                         key={m.user_id}
                                                         onClick={() => handleToggleAssignee(m.user_id)}
                                                         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all duration-200 group/member ${isAssigned
-                                                            ? 'bg-violet-500/10 border-violet-500/30 text-white'
-                                                            : 'bg-white/[0.02] border-white/[0.04] text-midnight-400 hover:border-white/[0.1] hover:text-white'
+                                                            ? 'bg-violet-500/15 border-violet-500/40 text-white shadow-lg shadow-violet-500/5'
+                                                            : 'bg-white/[0.02] border-white/[0.04] text-midnight-400 hover:border-white/[0.1] hover:text-white hover:bg-white/[0.05]'
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-2.5">
@@ -1235,12 +1252,7 @@ export default function ProjectDetailPage() {
                                             onChange={async (e) => {
                                                 const categoryId = e.target.value || null
                                                 if (selectedTask) {
-                                                    setSelectedTask({ ...selectedTask, category_id: categoryId })
-                                                    setTasks(prev => prev.map(t => t.id === selectedTask.id ? { ...t, category_id: categoryId } : t))
-                                                    await fetch(`/api/tasks/${selectedTask.id}`, {
-                                                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ categoryId })
-                                                    })
+                                                    await updateTask(selectedTask.id, { categoryId })
                                                 }
                                             }}
                                             className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]">

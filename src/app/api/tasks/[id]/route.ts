@@ -21,6 +21,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         if (body.description !== undefined) updateData.description = body.description
         if (body.status !== undefined) updateData.status = body.status
         if (body.position !== undefined) updateData.position = body.position
+        if (body.dueDate !== undefined) updateData.due_date = body.dueDate
+        if (body.due_date !== undefined) updateData.due_date = body.due_date
+        if (body.categoryId !== undefined) updateData.category_id = body.categoryId
+        if (body.category_id !== undefined) updateData.category_id = body.category_id
         const { data: task, error: updateError } = await supabase
             .from('tasks')
             .update(updateData)
