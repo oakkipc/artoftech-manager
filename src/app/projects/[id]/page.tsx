@@ -30,7 +30,8 @@ import {
     TrendingUp,
     TrendingDown,
     MessageSquare,
-    StickyNote
+    StickyNote,
+    Loader2
 } from 'lucide-react'
 
 interface ChecklistItem {
@@ -133,6 +134,7 @@ export default function ProjectDetailPage() {
     const [notes, setNotes] = useState<ProjectNote[]>([])
     const [newNote, setNewNote] = useState('')
     const [showNotes, setShowNotes] = useState(false)
+    const [isAddingNote, setIsAddingNote] = useState(false)
     const [currentUser, setCurrentUser] = useState<any>(null)
 
     // Drag state
@@ -386,7 +388,8 @@ export default function ProjectDetailPage() {
 
     // Project notes
     const handleAddNote = async () => {
-        if (!newNote.trim()) return
+        if (!newNote.trim() || isAddingNote) return
+        setIsAddingNote(true)
         try {
             const res = await fetch('/api/projects/notes', {
                 method: 'POST',
@@ -397,8 +400,15 @@ export default function ProjectDetailPage() {
             if (data.note) {
                 setNotes(prev => [data.note, ...prev])
                 setNewNote('')
+            } else if (data.error) {
+                alert(`ล้มเหลว: ${data.error}`)
             }
-        } catch (err) { console.error(err) }
+        } catch (err) {
+            console.error(err)
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ')
+        } finally {
+            setIsAddingNote(false)
+        }
     }
 
     const handleDeleteNote = async (id: string) => {
@@ -805,14 +815,19 @@ export default function ProjectDetailPage() {
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
+                                        disabled={isAddingNote}
                                         value={newNote}
                                         onChange={(e) => setNewNote(e.target.value)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote() }}
-                                        className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/40"
-                                        placeholder="Add a note..."
+                                        className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/40 disabled:opacity-50"
+                                        placeholder={isAddingNote ? "Adding..." : "Add a note..."}
                                     />
-                                    <button onClick={handleAddNote} className="px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors">
-                                        <Plus className="w-4 h-4" />
+                                    <button
+                                        onClick={handleAddNote}
+                                        disabled={isAddingNote || !newNote.trim()}
+                                        className="px-3 py-2 bg-violet-600 hover:bg-violet-500 disabled:bg-violet-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors min-w-[40px] flex items-center justify-center"
+                                    >
+                                        {isAddingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                                     </button>
                                 </div>
                                 <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">

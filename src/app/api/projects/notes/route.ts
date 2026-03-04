@@ -49,9 +49,13 @@ export async function POST(request: Request) {
             .select()
             .single()
 
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+            console.error('[ProjectNotes API POST] Supabase Error:', error)
+            return NextResponse.json({ error: error.message }, { status: 500 })
+        }
         return NextResponse.json({ note: data })
-    } catch {
+    } catch (err) {
+        console.error('[ProjectNotes API POST] Server Error:', err)
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }
 }
