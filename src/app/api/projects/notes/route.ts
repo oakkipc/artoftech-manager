@@ -93,7 +93,7 @@ export async function PUT(request: Request) {
         const supabase = getAdminClient()
         const { data, error } = await supabase
             .from('project_notes')
-            .update({ content, updated_at: new Date().toISOString() })
+            .update({ content })
             .eq('id', id)
             .select()
             .single()

@@ -406,8 +406,13 @@ export default function ProjectDetailPage() {
             if (data.note) {
                 setNotes(prev => prev.map(n => n.id === id ? data.note : n))
                 setEditingNoteId(null)
+            } else if (data.error) {
+                alert(`แก้ไขล้มเหลว: ${data.error}`)
             }
-        } catch (err) { console.error(err) }
+        } catch (err) {
+            console.error(err)
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์')
+        }
     }
 
     // Project notes
