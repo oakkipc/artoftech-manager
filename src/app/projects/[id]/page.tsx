@@ -135,6 +135,8 @@ export default function ProjectDetailPage() {
     const [newNote, setNewNote] = useState('')
     const [showNotes, setShowNotes] = useState(false)
     const [isAddingNote, setIsAddingNote] = useState(false)
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+    const [editingNoteContent, setEditingNoteContent] = useState('')
     const [currentUser, setCurrentUser] = useState<any>(null)
 
     // Drag state
@@ -386,6 +388,28 @@ export default function ProjectDetailPage() {
         try { await fetch(`/api/projects/links?id=${id}`, { method: 'DELETE' }) } catch { }
     }
 
+    const handleDeleteNote = async (id: string) => {
+        if (!confirm('ต้องการลบบันทึกนี้ใช่หรือไม่?')) return
+        setNotes(prev => prev.filter(n => n.id !== id))
+        try { await fetch(`/api/projects/notes?id=${id}`, { method: 'DELETE' }) } catch { }
+    }
+
+    const handleUpdateNote = async (id: string) => {
+        if (!editingNoteContent.trim()) return
+        try {
+            const res = await fetch('/api/projects/notes', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, content: editingNoteContent })
+            })
+            const data = await res.json()
+            if (data.note) {
+                setNotes(prev => prev.map(n => n.id === id ? data.note : n))
+                setEditingNoteId(null)
+            }
+        } catch (err) { console.error(err) }
+    }
+
     // Project notes
     const handleAddNote = async () => {
         if (!newNote.trim() || isAddingNote) return
@@ -409,14 +433,6 @@ export default function ProjectDetailPage() {
         } finally {
             setIsAddingNote(false)
         }
-    }
-
-    const handleDeleteNote = async (id: string) => {
-        if (!confirm('ต้องการลบโน๊ตนี้จริงหรือไม่?')) return
-        try {
-            await fetch(`/api/projects/notes?id=${id}`, { method: 'DELETE' })
-            setNotes(prev => prev.filter(n => n.id !== id))
-        } catch (err) { console.error(err) }
     }
 
     // Helpers
@@ -833,16 +849,58 @@ export default function ProjectDetailPage() {
                                 <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
                                     {notes.map(note => (
                                         <div key={note.id} className="group p-3 bg-white/[0.03] border border-white/[0.04] rounded-lg hover:border-white/[0.1] transition-all">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <p className="text-sm text-midnight-300 flex-1 whitespace-pre-wrap">{note.content}</p>
-                                                <button onClick={() => handleDeleteNote(note.id)} className="p-1 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                            <div className="mt-2 flex items-center gap-2 text-[10px] text-midnight-600">
-                                                <Clock className="w-3 h-3" />
-                                                {new Date(note.created_at).toLocaleString('th-TH')}
-                                            </div>
+                                            {editingNoteId === note.id ? (
+                                                <div className="space-y-2">
+                                                    <textarea
+                                                        value={editingNoteContent}
+                                                        onChange={(e) => setEditingNoteContent(e.target.value)}
+                                                        className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 min-h-[80px] resize-none"
+                                                        autoFocus
+                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => handleUpdateNote(note.id)}
+                                                            className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-medium rounded-md transition-colors"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setEditingNoteId(null)}
+                                                            className="px-3 py-1 text-midnight-500 hover:text-white text-[10px]"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="flex items-start gap-2">
+                                                        <p className="text-sm text-midnight-300 flex-1 whitespace-pre-wrap leading-relaxed">{note.content}</p>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEditingNoteId(note.id)
+                                                                    setEditingNoteContent(note.content)
+                                                                }}
+                                                                className="p-1 text-midnight-700 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-all rounded"
+                                                            >
+                                                                <Edit2 className="w-3 h-3" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteNote(note.id)}
+                                                                className="p-1 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all rounded"
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 flex items-center justify-between">
+                                                        <span className="text-[10px] text-midnight-700">
+                                                            {new Date(note.created_at).toLocaleString('th-TH')}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     ))}
                                     {notes.length === 0 && (

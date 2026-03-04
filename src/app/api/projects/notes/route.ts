@@ -80,3 +80,27 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }
 }
+
+// PUT: Update a note
+export async function PUT(request: Request) {
+    try {
+        const { id, content } = await request.json()
+
+        if (!id || !content) {
+            return NextResponse.json({ error: 'Missing id or content' }, { status: 400 })
+        }
+
+        const supabase = getAdminClient()
+        const { data, error } = await supabase
+            .from('project_notes')
+            .update({ content, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ note: data })
+    } catch (err) {
+        return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    }
+}
