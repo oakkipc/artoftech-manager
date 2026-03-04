@@ -20,7 +20,10 @@ import {
     ChevronRight,
     Wallet,
     Building2,
-    Activity
+    Activity,
+    ChevronUp,
+    ChevronDown,
+    Settings2
 } from 'lucide-react'
 
 const navItems = [
@@ -60,6 +63,7 @@ export function Sidebar() {
     const { isCollapsed, isOpen, toggleCollapse, toggleOpen, setIsOpen } = useSidebar()
     const [user, setUser] = useState<any>(null)
     const [pinnedProjects, setPinnedProjects] = useState<PinnedProject[]>([])
+    const [isReordering, setIsReordering] = useState(false)
 
     useEffect(() => {
         const userStr = localStorage.getItem('user')
@@ -77,6 +81,32 @@ export function Sidebar() {
                 const pinned = data.projects.filter((p: any) => p.pinned)
                 setPinnedProjects(pinned)
             }
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const moveProject = async (index: number, direction: 'up' | 'down') => {
+        const newPinned = [...pinnedProjects]
+        const targetIndex = direction === 'up' ? index - 1 : index + 1
+
+        if (targetIndex < 0 || targetIndex >= newPinned.length) return
+
+        // Swap
+        const [moved] = newPinned.splice(index, 1)
+        newPinned.splice(targetIndex, 0, moved)
+
+        setPinnedProjects(newPinned)
+
+        // Update Backend
+        try {
+            await Promise.all(newPinned.map((p, idx) =>
+                fetch('/api/admin/projects', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId: p.id, pinOrder: idx })
+                })
+            ))
         } catch (err) {
             console.error(err)
         }
@@ -192,9 +222,18 @@ export function Sidebar() {
                             {groupIdx === 0 && pinnedProjects.length > 0 && (
                                 <div className={`mt-3 pt-3 border-t border-white/[0.04] ${isCollapsed ? 'flex justify-center' : ''}`}>
                                     {!isCollapsed && (
-                                        <div className="text-[10px] font-bold text-midnight-600 uppercase tracking-[0.2em] px-4 mb-2 flex items-center gap-1.5 transition-opacity duration-300">
-                                            <Pin className="w-3 h-3" />
-                                            Pinned
+                                        <div className="text-[10px] font-bold text-midnight-600 uppercase tracking-[0.2em] px-4 mb-2 flex items-center justify-between transition-opacity duration-300">
+                                            <div className="flex items-center gap-1.5">
+                                                <Pin className="w-3 h-3" />
+                                                Pinned
+                                            </div>
+                                            <button
+                                                onClick={() => setIsReordering(!isReordering)}
+                                                className={`p-1 hover:bg-white/10 rounded-md transition-colors ${isReordering ? 'text-amber-400 bg-amber-400/10' : 'text-midnight-600'}`}
+                                                title="Reorder Pinned Projects"
+                                            >
+                                                <Settings2 className="w-3 h-3" />
+                                            </button>
                                         </div>
                                     )}
                                     <div className="space-y-1 w-full">
@@ -214,12 +253,31 @@ export function Sidebar() {
                                                         }
                                                     `}
                                                 >
-                                                    <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-3 min-w-0">
                                                         <LayoutGrid className={`w-[16px] h-[16px] shrink-0 ${isActive ? 'text-amber-400' : 'text-midnight-600 group-hover/item:text-amber-400 transition-colors'}`} />
                                                         {!isCollapsed && <span className="text-sm font-medium truncate transition-opacity duration-300">{project.name}</span>}
                                                     </div>
-                                                    {!isCollapsed && isActive && (
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
+                                                    {!isCollapsed && isReordering ? (
+                                                        <div className="flex items-center gap-1 shrink-0 animate-in fade-in slide-in-from-right-2 duration-200">
+                                                            <button
+                                                                onClick={(e) => { e.preventDefault(); moveProject(pinnedProjects.indexOf(project), 'up') }}
+                                                                disabled={pinnedProjects.indexOf(project) === 0}
+                                                                className="p-1 hover:bg-white/10 rounded text-midnight-500 hover:text-white disabled:opacity-20"
+                                                            >
+                                                                <ChevronUp className="w-3 h-3" />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.preventDefault(); moveProject(pinnedProjects.indexOf(project), 'down') }}
+                                                                disabled={pinnedProjects.indexOf(project) === pinnedProjects.length - 1}
+                                                                className="p-1 hover:bg-white/10 rounded text-midnight-500 hover:text-white disabled:opacity-20"
+                                                            >
+                                                                <ChevronDown className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        !isCollapsed && isActive && (
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
+                                                        )
                                                     )}
                                                 </Link>
                                             )

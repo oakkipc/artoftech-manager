@@ -17,6 +17,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from('projects')
       .select('*, clients(name)')
+      .order('pin_order', { ascending: true })
       .order('created_at', { ascending: false })
 
     if (id) query = query.eq('id', id)
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { projectId, pinned } = await request.json()
+    const { projectId, pinned, pinOrder } = await request.json()
 
     if (!projectId) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
@@ -79,9 +80,13 @@ export async function PATCH(request: Request) {
 
     const supabase = getAdminClient()
 
+    const updateData: any = {}
+    if (pinned !== undefined) updateData.pinned = pinned
+    if (pinOrder !== undefined) updateData.pin_order = pinOrder
+
     const { data, error } = await supabase
       .from('projects')
-      .update({ pinned: pinned ?? false })
+      .update(updateData)
       .eq('id', projectId)
       .select()
       .single()

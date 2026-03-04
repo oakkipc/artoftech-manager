@@ -68,6 +68,7 @@ export default function BudgetPage() {
     const [filterClient, setFilterClient] = useState('')
     const [filterType, setFilterType] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: 'date', direction: 'desc' })
 
     // Form
     const [formData, setFormData] = useState({
@@ -228,8 +229,44 @@ export default function BudgetPage() {
         return matchProject && matchVendor && matchClient && matchType && matchSearch
     })
 
-    const totalIncome = filteredTransactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount), 0)
-    const totalExpense = filteredTransactions.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount), 0)
+    const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+        if (!sortConfig.key || !sortConfig.direction) return 0
+
+        let aValue: any = a[sortConfig.key as keyof Transaction]
+        let bValue: any = b[sortConfig.key as keyof Transaction]
+
+        // Special handling for nested or calculated fields
+        if (sortConfig.key === 'project') {
+            aValue = a.projects?.name || ''
+            bValue = b.projects?.name || ''
+        } else if (sortConfig.key === 'amount') {
+            aValue = Number(a.amount)
+            bValue = Number(b.amount)
+        }
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
+        return 0
+    })
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' | null = 'asc'
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc'
+        } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = null
+            key = ''
+        }
+        setSortConfig({ key, direction })
+    }
+
+    const SortIcon = ({ column }: { column: string }) => {
+        if (sortConfig.key !== column) return <MoreHorizontal className="w-3 h-3 opacity-20" />
+        return sortConfig.direction === 'asc' ? <TrendingUp className="w-3 h-3 text-violet-400" /> : <TrendingDown className="w-3 h-3 text-violet-400" />
+    }
+
+    const totalIncome = sortedTransactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount), 0)
+    const totalExpense = sortedTransactions.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount), 0)
     const balance = totalIncome - totalExpense
 
     // Calendar Utilities
@@ -438,15 +475,43 @@ export default function BudgetPage() {
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="border-b border-white/[0.04] bg-white/[0.01]">
-                                            <th className="px-6 py-4 text-[10px] font-bold text-midnight-500 uppercase tracking-wider">Date</th>
-                                            <th className="px-6 py-4 text-[10px] font-bold text-midnight-500 uppercase tracking-wider">Description</th>
-                                            <th className="px-6 py-4 text-[10px] font-bold text-midnight-500 uppercase tracking-wider">Project</th>
-                                            <th className="px-6 py-4 text-[10px] font-bold text-midnight-500 uppercase tracking-wider text-right">Amount</th>
+                                            <th
+                                                className="px-6 py-4 text-[10px] font-bold text-midnight-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                                                onClick={() => handleSort('date')}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    Date <SortIcon column="date" />
+                                                </div>
+                                            </th>
+                                            <th
+                                                className="px-6 py-4 text-[10px] font-bold text-midnight-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                                                onClick={() => handleSort('description')}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    Description <SortIcon column="description" />
+                                                </div>
+                                            </th>
+                                            <th
+                                                className="px-6 py-4 text-[10px] font-bold text-midnight-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                                                onClick={() => handleSort('project')}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    Project <SortIcon column="project" />
+                                                </div>
+                                            </th>
+                                            <th
+                                                className="px-6 py-4 text-[10px] font-bold text-midnight-500 uppercase tracking-wider text-right cursor-pointer hover:text-white transition-colors"
+                                                onClick={() => handleSort('amount')}
+                                            >
+                                                <div className="flex items-center gap-2 justify-end">
+                                                    Amount <SortIcon column="amount" />
+                                                </div>
+                                            </th>
                                             <th className="px-6 py-4 text-[10px] font-bold text-midnight-500 uppercase tracking-wider text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/[0.02]">
-                                        {filteredTransactions.map((t) => (
+                                        {sortedTransactions.map((t) => (
                                             <tr key={t.id} className="hover:bg-white/[0.02] transition-colors group">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
