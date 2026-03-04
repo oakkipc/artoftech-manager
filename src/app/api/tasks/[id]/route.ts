@@ -25,15 +25,27 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         if (body.due_date !== undefined) updateData.due_date = body.due_date
         if (body.categoryId !== undefined) updateData.category_id = body.categoryId
         if (body.category_id !== undefined) updateData.category_id = body.category_id
-        const { data: task, error: updateError } = await supabase
-            .from('tasks')
-            .update(updateData)
-            .eq('id', id)
-            .select('*')
-            .single()
+        let task = null
+        if (Object.keys(updateData).length > 0) {
+            const { data: updatedTask, error: updateError } = await supabase
+                .from('tasks')
+                .update(updateData)
+                .eq('id', id)
+                .select('*')
+                .single()
 
-        if (updateError) {
-            return NextResponse.json({ error: updateError.message }, { status: 500 })
+            if (updateError) {
+                return NextResponse.json({ error: updateError.message }, { status: 500 })
+            }
+            task = updatedTask
+        } else {
+            // Just fetch the task if no fields to update
+            const { data: existingTask } = await supabase
+                .from('tasks')
+                .select('*')
+                .eq('id', id)
+                .single()
+            task = existingTask
         }
 
         // Sync assignees if provided
@@ -73,9 +85,20 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
             .select('users(id, name, email)')
             .eq('task_id', id)
 
-        const assignees = (assigneesData || []).map((a: any) => a.users)
+        const assignees = (assigneesData || []).map((a: any) => a.users).filter(Boolean)
 
-        return NextResponse.json({ task: { ...task, assignees } })
+        // Fetch checklist stats
+        const { data: checklistData } = await supabase
+            .from('task_checklists')
+            .select('completed')
+            .eq('task_id', id)
+
+        const checklistStats = {
+            total: checklistData?.length || 0,
+            completed: checklistData?.filter((c: any) => c.completed).length || 0
+        }
+
+        return NextResponse.json({ task: { ...task, assignees, checklistStats } })
     } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }

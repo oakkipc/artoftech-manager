@@ -142,6 +142,7 @@ export default function ProjectDetailPage() {
     // Drag state
     const [draggedTask, setDraggedTask] = useState<Task | null>(null)
     const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+    const [dropIndex, setDropIndex] = useState<number | null>(null)
 
     // Task detail modal
     const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -390,18 +391,47 @@ export default function ProjectDetailPage() {
     const handleDrop = async (e: React.DragEvent, newStatus: string) => {
         e.preventDefault()
         setDragOverColumn(null)
-        if (!draggedTask || draggedTask.status === newStatus) { setDraggedTask(null); return }
-        const updatedTasks = tasks.map(t =>
-            t.id === draggedTask.id ? { ...t, status: newStatus, position: getColumnTasks(newStatus).length } : t
-        )
-        setTasks(updatedTasks)
+        const finalDropIndex = dropIndex
+        setDropIndex(null)
+
+        if (!draggedTask) return
+
+        // Get target column tasks excluding the dragged one
+        const targetColTasks = getColumnTasks(newStatus).filter(t => t.id !== draggedTask.id)
+
+        // Calculate insertion point
+        const insertAt = finalDropIndex === null ? targetColTasks.length : finalDropIndex
+
+        // Create new column order
+        const newOrder = [...targetColTasks]
+        newOrder.splice(insertAt, 0, { ...draggedTask, status: newStatus })
+
+        // Assign new positions
+        const reorderedTasks = newOrder.map((t, idx) => ({ ...t, position: idx }))
+
+        // Update local state optimistically
+        setTasks(prev => {
+            const otherTasks = prev.filter(t => t.status !== newStatus && t.id !== draggedTask.id)
+            return [...otherTasks, ...reorderedTasks]
+        })
+
         try {
-            await fetch(`/api/tasks/${draggedTask.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus, position: getColumnTasks(newStatus).length, userId: currentUser?.id })
-            })
-        } catch { fetchAll() }
+            // If status changed, update status and position
+            // If just reordering within same column, update positions
+            await Promise.all(reorderedTasks.map(t =>
+                fetch(`/api/tasks/${t.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: t.status,
+                        position: t.position,
+                        userId: currentUser?.id
+                    })
+                })
+            ))
+        } catch {
+            fetchAll()
+        }
         setDraggedTask(null)
     }
 
@@ -1051,10 +1081,14 @@ export default function ProjectDetailPage() {
                                             </div>
                                         )}
 
-                                        {columnTasks.map((task) => (
+                                        {columnTasks.map((task, index) => (
                                             <div key={task.id} draggable onDragStart={(e) => handleDragStart(e, task)} onDragEnd={handleDragEnd}
                                                 onClick={() => openTaskDetail(task)}
-                                                className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-white/[0.12] transition-all group"
+                                                onDragOver={(e) => {
+                                                    e.preventDefault()
+                                                    setDropIndex(index)
+                                                }}
+                                                className={`bg-white/[0.03] border rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all group ${dropIndex === index && dragOverColumn === column.key ? 'border-violet-500/50 bg-violet-500/5 translate-y-1' : 'border-white/[0.06] hover:border-white/[0.12]'}`}
                                             >
                                                 <div className="flex items-start gap-2">
                                                     <GripVertical className="w-4 h-4 text-midnight-700 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -1074,32 +1108,47 @@ export default function ProjectDetailPage() {
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
                                                 </div>
-                                                {/* Checklist Progress */}
+
+                                                {/* Checklist Progress - Enhanced */}
                                                 {task.checklistStats && task.checklistStats.total > 0 && (
-                                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] text-zinc-400">
-                                                        <CheckSquare className={`w-3 h-3 ${task.checklistStats.completed === task.checklistStats.total ? 'text-emerald-400' : 'text-zinc-500'}`} />
-                                                        <span className={task.checklistStats.completed === task.checklistStats.total ? 'text-emerald-400 font-medium' : ''}>
+                                                    <div className="mt-3 flex items-center gap-2">
+                                                        <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                                                            <div className={`h-full transition-all duration-500 ${task.checklistStats.completed === task.checklistStats.total ? 'bg-emerald-500' : 'bg-violet-500'}`}
+                                                                style={{ width: `${(task.checklistStats.completed / task.checklistStats.total) * 100}%` }} />
+                                                        </div>
+                                                        <span className={`text-[10px] font-bold ${task.checklistStats.completed === task.checklistStats.total ? 'text-emerald-400' : 'text-midnight-500'}`}>
                                                             {task.checklistStats.completed}/{task.checklistStats.total}
                                                         </span>
                                                     </div>
                                                 )}
 
-                                                {/* Meta row */}
-                                                <div className="flex items-center gap-2 mt-2 ml-6 flex-wrap">
+                                                {/* Meta row - Show Assignee Names */}
+                                                <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.04]">
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        {task.assignees && task.assignees.length > 0 ? (
+                                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                                <div className="flex -space-x-1.5">
+                                                                    {task.assignees.slice(0, 3).map((user) => (
+                                                                        <div key={user.id} className="w-5 h-5 rounded-full ring-2 ring-[#0a0a1a] bg-violet-500/20 flex items-center justify-center shrink-0">
+                                                                            <span className="text-[8px] font-bold text-violet-400">{user.name.charAt(0)}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                <span className="text-[10px] text-midnight-500 truncate font-medium">
+                                                                    {task.assignees[0].name}
+                                                                    {task.assignees.length > 1 && ` +${task.assignees.length - 1}`}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-[10px] text-midnight-700 italic">Unassigned</span>
+                                                        )}
+                                                    </div>
+
                                                     {task.due_date && (
-                                                        <span className={`flex items-center gap-1 text-[11px] ${getDueDateColor(task.due_date)}`}>
+                                                        <span className={`flex items-center gap-1 text-[10px] font-bold ${getDueDateColor(task.due_date)}`}>
                                                             <Calendar className="w-3 h-3" />
                                                             {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                         </span>
-                                                    )}
-                                                    {task.assignees && task.assignees.length > 0 && (
-                                                        <div className="flex -space-x-1.5 overflow-hidden">
-                                                            {task.assignees.map((user) => (
-                                                                <div key={user.id} className="w-5 h-5 rounded-full ring-2 ring-[#0a0a1a] bg-violet-500/20 flex items-center justify-center shrink-0" title={user.name}>
-                                                                    <span className="text-[8px] font-bold text-violet-400">{user.name.charAt(0)}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
