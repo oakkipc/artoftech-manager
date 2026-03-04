@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
         // Fetch checklist counts
         const { data: checklistData } = await supabase
-            .from('task_checklists')
+            .from('checklists')
             .select('task_id, completed')
             .in('task_id', tasks?.map(t => t.id) || [])
 

@@ -89,7 +89,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
         // Fetch checklist stats
         const { data: checklistData } = await supabase
-            .from('task_checklists')
+            .from('checklists')
             .select('completed')
             .eq('task_id', id)
 

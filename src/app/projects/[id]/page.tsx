@@ -1111,14 +1111,22 @@ export default function ProjectDetailPage() {
 
                                                 {/* Checklist Progress - Enhanced */}
                                                 {task.checklistStats && task.checklistStats.total > 0 && (
-                                                    <div className="mt-3 flex items-center gap-2">
-                                                        <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                                                    <div className="mt-3">
+                                                        <div className="flex items-center justify-between mb-1.5">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <CheckSquare className={`w-3 h-3 ${task.checklistStats.completed === task.checklistStats.total ? 'text-emerald-400' : 'text-violet-400'}`} />
+                                                                <span className={`text-[10px] font-bold ${task.checklistStats.completed === task.checklistStats.total ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                                                                    {task.checklistStats.completed}/{task.checklistStats.total}
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-[9px] text-midnight-600 font-medium">
+                                                                {Math.round((task.checklistStats.completed / task.checklistStats.total) * 100)}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                                                             <div className={`h-full transition-all duration-500 ${task.checklistStats.completed === task.checklistStats.total ? 'bg-emerald-500' : 'bg-violet-500'}`}
                                                                 style={{ width: `${(task.checklistStats.completed / task.checklistStats.total) * 100}%` }} />
                                                         </div>
-                                                        <span className={`text-[10px] font-bold ${task.checklistStats.completed === task.checklistStats.total ? 'text-emerald-400' : 'text-midnight-500'}`}>
-                                                            {task.checklistStats.completed}/{task.checklistStats.total}
-                                                        </span>
                                                     </div>
                                                 )}
 
