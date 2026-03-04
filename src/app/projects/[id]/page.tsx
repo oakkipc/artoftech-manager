@@ -776,139 +776,174 @@ export default function ProjectDetailPage() {
                             </div>
                         )
                     }
-                    {/* Project Links */}
-                    <div className="mb-5 flex flex-wrap items-center gap-2 pl-12 lg:pl-0">
-                        {projectLinks.map((link) => (
-                            <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
-                                className="group flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:border-violet-500/20 transition-all text-sm">
-                                <Link2 className="w-3.5 h-3.5 text-violet-400 shrink-0" />
-                                <span className="text-white font-medium">{link.label}</span>
-                                <ExternalLink className="w-3 h-3 text-midnight-600 group-hover:text-violet-400" />
-                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteLink(link.id) }}
-                                    className="ml-1 p-0.5 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
-                                    <X className="w-3 h-3" />
+                    {/* Links and Notes Two-Column Layout */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 pl-12 lg:pl-0">
+                        {/* Project Links Card */}
+                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden flex flex-col">
+                            <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between shrink-0">
+                                <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                                    <Link2 className="w-3.5 h-3.5 text-violet-400" /> Project Links
+                                </h3>
+                                <button onClick={() => setShowAddLink(!showAddLink)} className="text-[10px] font-bold text-violet-400 hover:text-violet-300 uppercase tracking-wider">
+                                    {showAddLink ? 'Cancel' : 'Add Link'}
                                 </button>
-                            </a>
-                        ))}
-                        {showAddLink ? (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.04] border border-violet-500/20 rounded-lg">
-                                <select value={newLink.type} onChange={(e) => setNewLink({ ...newLink, type: e.target.value })}
-                                    className="bg-transparent text-xs text-midnight-400 focus:outline-none [color-scheme:dark]">
-                                    <option value="WEBSITE" className="bg-[#0f0f23]">Website</option>
-                                    <option value="FILE" className="bg-[#0f0f23]">File</option>
-                                    <option value="REPO" className="bg-[#0f0f23]">Repo</option>
-                                    <option value="DESIGN" className="bg-[#0f0f23]">Design</option>
-                                    <option value="OTHER" className="bg-[#0f0f23]">Other</option>
-                                </select>
-                                <input type="text" value={newLink.label} onChange={(e) => setNewLink({ ...newLink, label: e.target.value })}
-                                    className="w-24 bg-transparent text-white text-sm placeholder-midnight-600 focus:outline-none" placeholder="Label" />
-                                <input type="url" value={newLink.url} onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddLink() }}
-                                    className="w-40 bg-transparent text-white text-sm placeholder-midnight-600 focus:outline-none" placeholder="https://..." />
-                                <button onClick={handleAddLink} className="text-violet-400 hover:text-violet-300"><Plus className="w-4 h-4" /></button>
-                                <button onClick={() => setShowAddLink(false)} className="text-midnight-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
                             </div>
-                        ) : (
-                            <button onClick={() => setShowAddLink(true)}
-                                className="flex items-center gap-1 px-3 py-1.5 text-xs text-midnight-500 hover:text-violet-400 border border-dashed border-white/[0.06] hover:border-violet-500/20 rounded-lg transition-all">
-                                <Plus className="w-3.5 h-3.5" /> Add Link
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Project Notes Section */}
-                    <div className="mb-6 bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden ml-12 lg:ml-0">
-                        <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between">
-                            <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                                <StickyNote className="w-3.5 h-3.5 text-amber-400" /> Project Notes
-                            </h3>
-                            <button onClick={() => setShowNotes(!showNotes)} className="text-[10px] font-bold text-violet-400 hover:text-violet-300 uppercase tracking-wider">
-                                {showNotes ? 'Hide' : `View All (${notes.length})`}
-                            </button>
-                        </div>
-                        {showNotes && (
-                            <div className="p-4 space-y-3">
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        disabled={isAddingNote}
-                                        value={newNote}
-                                        onChange={(e) => setNewNote(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote() }}
-                                        className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/40 disabled:opacity-50"
-                                        placeholder={isAddingNote ? "Adding..." : "Add a note..."}
-                                    />
-                                    <button
-                                        onClick={handleAddNote}
-                                        disabled={isAddingNote || !newNote.trim()}
-                                        className="px-3 py-2 bg-violet-600 hover:bg-violet-500 disabled:bg-violet-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors min-w-[40px] flex items-center justify-center"
-                                    >
-                                        {isAddingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                                <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                    {notes.map(note => (
-                                        <div key={note.id} className="group p-3 bg-white/[0.03] border border-white/[0.04] rounded-lg hover:border-white/[0.1] transition-all">
-                                            {editingNoteId === note.id ? (
-                                                <div className="space-y-2">
-                                                    <textarea
-                                                        value={editingNoteContent}
-                                                        onChange={(e) => setEditingNoteContent(e.target.value)}
-                                                        className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 min-h-[80px] resize-none"
-                                                        autoFocus
-                                                    />
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => handleUpdateNote(note.id)}
-                                                            className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-medium rounded-md transition-colors"
-                                                        >
-                                                            Save
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setEditingNoteId(null)}
-                                                            className="px-3 py-1 text-midnight-500 hover:text-white text-[10px]"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <div className="flex items-start gap-2">
-                                                        <p className="text-sm text-midnight-300 flex-1 whitespace-pre-wrap leading-relaxed">{note.content}</p>
-                                                        <div className="flex items-center gap-1">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setEditingNoteId(note.id)
-                                                                    setEditingNoteContent(note.content)
-                                                                }}
-                                                                className="p-1 text-midnight-700 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-all rounded"
-                                                            >
-                                                                <Edit2 className="w-3 h-3" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteNote(note.id)}
-                                                                className="p-1 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all rounded"
-                                                            >
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="mt-2 flex items-center justify-between">
-                                                        <span className="text-[10px] text-midnight-700">
-                                                            {new Date(note.created_at).toLocaleString('th-TH')}
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            )}
+                            <div className="p-4 flex-1">
+                                {showAddLink && (
+                                    <div className="mb-4 p-3 bg-white/[0.04] border border-violet-500/20 rounded-lg space-y-3">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] text-midnight-600 font-bold uppercase">Type</p>
+                                                <select value={newLink.type} onChange={(e) => setNewLink({ ...newLink, type: e.target.value })}
+                                                    className="w-full bg-white/[0.05] border border-white/[0.1] rounded px-2 py-1.5 text-xs text-midnight-300 focus:outline-none [color-scheme:dark]">
+                                                    <option value="WEBSITE" className="bg-[#0f0f23]">Website</option>
+                                                    <option value="FILE" className="bg-[#0f0f23]">File</option>
+                                                    <option value="REPO" className="bg-[#0f0f23]">Repo</option>
+                                                    <option value="DESIGN" className="bg-[#0f0f23]">Design</option>
+                                                    <option value="OTHER" className="bg-[#0f0f23]">Other</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] text-midnight-600 font-bold uppercase">Label</p>
+                                                <input type="text" value={newLink.label} onChange={(e) => setNewLink({ ...newLink, label: e.target.value })}
+                                                    className="w-full bg-white/[0.05] border border-white/[0.1] rounded px-2 py-1.5 text-xs text-white placeholder-midnight-700 focus:outline-none focus:border-violet-500/30" placeholder="My Site" />
+                                            </div>
                                         </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] text-midnight-600 font-bold uppercase">URL</p>
+                                            <div className="flex gap-2">
+                                                <input type="url" value={newLink.url} onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddLink() }}
+                                                    className="flex-1 bg-white/[0.05] border border-white/[0.1] rounded px-2 py-1.5 text-xs text-white placeholder-midnight-700 focus:outline-none focus:border-violet-500/30" placeholder="https://..." />
+                                                <button onClick={handleAddLink} className="p-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded transition-colors self-end">
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                                    {projectLinks.map((link) => (
+                                        <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
+                                            className="group flex items-center justify-between p-2 bg-white/[0.03] border border-white/[0.04] rounded-lg hover:border-violet-500/20 transition-all">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <div className="w-6 h-6 rounded bg-violet-500/10 flex items-center justify-center shrink-0">
+                                                    <Link2 className="w-3 h-3 text-violet-400" />
+                                                </div>
+                                                <span className="text-xs text-white font-medium truncate">{link.label}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <ExternalLink className="w-3 h-3 text-midnight-700 group-hover:text-violet-400 transition-colors" />
+                                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteLink(link.id) }}
+                                                    className="p-1 text-midnight-800 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <Trash2 className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </a>
                                     ))}
-                                    {notes.length === 0 && (
-                                        <p className="text-center text-midnight-600 text-xs py-4">No notes yet</p>
+                                    {projectLinks.length === 0 && (
+                                        <p className="text-center text-midnight-600 text-xs py-4 italic">No links added</p>
                                     )}
                                 </div>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Project Notes Card */}
+                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden flex flex-col">
+                            <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between shrink-0">
+                                <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                                    <StickyNote className="w-3.5 h-3.5 text-amber-400" /> Project Notes
+                                </h3>
+                                <button onClick={() => setShowNotes(!showNotes)} className="text-[10px] font-bold text-violet-400 hover:text-violet-300 uppercase tracking-wider">
+                                    {showNotes ? 'Hide' : `View All (${notes.length})`}
+                                </button>
+                            </div>
+                            <div className="p-4 flex-1">
+                                {showNotes && (
+                                    <div className="space-y-4">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                disabled={isAddingNote}
+                                                value={newNote}
+                                                onChange={(e) => setNewNote(e.target.value)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote() }}
+                                                className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/40 disabled:opacity-50 placeholder-midnight-700"
+                                                placeholder={isAddingNote ? "Adding..." : "Add a note..."}
+                                            />
+                                            <button
+                                                onClick={handleAddNote}
+                                                disabled={isAddingNote || !newNote.trim()}
+                                                className="px-3 py-2 bg-violet-600 hover:bg-violet-500 disabled:bg-violet-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors min-w-[40px] flex items-center justify-center"
+                                            >
+                                                {isAddingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                        <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                                            {notes.map(note => (
+                                                <div key={note.id} className="group p-3 bg-white/[0.03] border border-white/[0.04] rounded-lg hover:border-white/[0.1] transition-all">
+                                                    {editingNoteId === note.id ? (
+                                                        <div className="space-y-2">
+                                                            <textarea
+                                                                value={editingNoteContent}
+                                                                onChange={(e) => setEditingNoteContent(e.target.value)}
+                                                                className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 min-h-[80px] resize-none"
+                                                                autoFocus
+                                                            />
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={() => handleUpdateNote(note.id)}
+                                                                    className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-medium rounded-md transition-colors"
+                                                                >
+                                                                    Save
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setEditingNoteId(null)}
+                                                                    className="px-3 py-1 text-midnight-500 hover:text-white text-[10px]"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="flex items-start gap-2">
+                                                                <p className="text-sm text-midnight-300 flex-1 whitespace-pre-wrap leading-relaxed">{note.content}</p>
+                                                                <div className="flex items-center gap-1">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setEditingNoteId(note.id)
+                                                                            setEditingNoteContent(note.content)
+                                                                        }}
+                                                                        className="p-1 text-midnight-700 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-all rounded"
+                                                                    >
+                                                                        <Edit2 className="w-3 h-3" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteNote(note.id)}
+                                                                        className="p-1 text-midnight-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all rounded"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="mt-2 flex items-center justify-between">
+                                                                <span className="text-[10px] text-midnight-700">
+                                                                    {new Date(note.created_at).toLocaleString('th-TH')}
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {notes.length === 0 && (
+                                                <p className="text-center text-midnight-600 text-xs py-4 italic">No notes yet</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Category Filter Bar */}
