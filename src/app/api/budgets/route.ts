@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logActivity } from '@/lib/logger'
 
 const getAdminClient = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -137,6 +138,17 @@ export async function DELETE(request: Request) {
             .eq('id', realId)
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+        // Log Activity
+        const userId = searchParams.get('userId')
+        await logActivity({
+            userId: userId || null,
+            action: 'DELETE',
+            entityType: 'BUDGET',
+            entityId: realId,
+            details: { id: realId }
+        })
+
         return NextResponse.json({ message: 'Deleted' })
     } catch {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })

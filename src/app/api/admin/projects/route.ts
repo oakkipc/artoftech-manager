@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logActivity } from '@/lib/logger'
 
 const getAdminClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -64,6 +65,15 @@ export async function POST(request: Request) {
         .insert({ user_id: ownerId, project_id: data.id, role: 'ADMIN' })
     }
 
+    // Log Activity
+    await logActivity({
+      userId: ownerId || null,
+      action: 'CREATE',
+      entityType: 'PROJECT',
+      entityId: data.id,
+      details: { name: data.name }
+    })
+
     return NextResponse.json({ project: data })
   } catch (error) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
@@ -72,7 +82,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { projectId, pinned, pinOrder } = await request.json()
+    const { projectId, pinned, pinOrder, userId } = await request.json()
 
     if (!projectId) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
@@ -93,6 +103,25 @@ export async function PATCH(request: Request) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Log Activity
+    if (pinned !== undefined) {
+      await logActivity({
+        userId: userId || null,
+        action: pinned ? 'PIN' : 'UPDATE',
+        entityType: 'PROJECT',
+        entityId: projectId,
+        details: { pinned, name: data.name }
+      })
+    } else if (pinOrder !== undefined) {
+      await logActivity({
+        userId: userId || null,
+        action: 'REORDER',
+        entityType: 'PROJECT',
+        entityId: projectId,
+        details: { pinOrder, name: data.name }
+      })
     }
 
     return NextResponse.json({ project: data })

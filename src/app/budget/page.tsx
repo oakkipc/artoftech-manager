@@ -61,6 +61,7 @@ export default function BudgetPage() {
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
     const [timeFilter, setTimeFilter] = useState<'daily' | 'weekly' | 'monthly' | 'yearly' | 'all'>('all')
     const [currentMonth, setCurrentMonth] = useState(new Date())
+    const [user, setUser] = useState<any>(null)
 
     // Filters
     const [filterProject, setFilterProject] = useState('')
@@ -86,6 +87,9 @@ export default function BudgetPage() {
     useEffect(() => {
         const userStr = localStorage.getItem('user')
         if (!userStr) { router.push('/login'); return }
+        const parsedUser = JSON.parse(userStr)
+        setUser(parsedUser)
+
         const urlParams = new URLSearchParams(window.location.search)
         const vId = urlParams.get('vendorId')
         const cId = urlParams.get('clientId')
@@ -162,7 +166,7 @@ export default function BudgetPage() {
             const res = await fetch('/api/budgets', {
                 method: editingId ? 'PATCH' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editingId ? { ...formData, id: editingId } : formData)
+                body: JSON.stringify(editingId ? { ...formData, id: editingId, userId: user?.id } : { ...formData, userId: user?.id })
             })
             if (res.ok) {
                 setShowModal(false)
@@ -209,7 +213,7 @@ export default function BudgetPage() {
     const handleDelete = async (id: string) => {
         if (!confirm('ยืนยันการลบรายการนี้?')) return
         try {
-            await fetch(`/api/budgets?id=${id}`, { method: 'DELETE' })
+            await fetch(`/api/budgets?id=${id}&userId=${user?.id}`, { method: 'DELETE' })
             fetchInitialData()
         } catch (err) {
             console.error(err)

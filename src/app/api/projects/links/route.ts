@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logActivity } from '@/lib/logger'
 
 const getAdminClient = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -47,6 +48,16 @@ export async function POST(request: Request) {
             .single()
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+        // Log Activity
+        await logActivity({
+            userId: body.userId || null,
+            action: 'CREATE',
+            entityType: 'LINK',
+            entityId: data.id,
+            details: { label: data.label, projectId: data.project_id }
+        })
+
         return NextResponse.json({ link: data })
     } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
@@ -61,6 +72,17 @@ export async function DELETE(request: Request) {
         const supabase = getAdminClient()
         const { error } = await supabase.from('project_links').delete().eq('id', id)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+        // Log Activity
+        const userId = searchParams.get('userId')
+        await logActivity({
+            userId: userId || null,
+            action: 'DELETE',
+            entityType: 'LINK',
+            entityId: id,
+            details: { id }
+        })
+
         return NextResponse.json({ message: 'Deleted' })
     } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })

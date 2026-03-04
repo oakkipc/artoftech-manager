@@ -140,7 +140,7 @@ export default function AdminProjectsPage() {
       await fetch('/api/admin/projects', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: project.id, pinned: !project.pinned })
+        body: JSON.stringify({ projectId: project.id, pinned: !project.pinned, userId: currentUser?.id })
       })
     } catch (err) {
       // Revert on error

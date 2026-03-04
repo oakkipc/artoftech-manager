@@ -53,6 +53,7 @@ interface Task {
     category_id: string | null
     created_at: string
     checklists?: ChecklistItem[]
+    checklistStats?: { total: number; completed: number }
 }
 
 interface TaskCategory {
@@ -209,7 +210,7 @@ export default function ProjectDetailPage() {
             const res = await fetch('/api/tasks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId, title: newTaskTitle, status, categoryId: newTaskCategory || null })
+                body: JSON.stringify({ projectId, title: newTaskTitle, status, categoryId: newTaskCategory || null, userId: currentUser?.id })
             })
             const data = await res.json()
             if (data.task) {
@@ -225,7 +226,7 @@ export default function ProjectDetailPage() {
         e?.stopPropagation()
         if (!confirm('ต้องการลบ task นี้จริงหรือไม่?')) return
         try {
-            await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' })
+            await fetch(`/api/tasks/${taskId}?userId=${currentUser?.id}`, { method: 'DELETE' })
             setTasks(prev => prev.filter(t => t.id !== taskId))
             if (selectedTask?.id === taskId) setSelectedTask(null)
         } catch (err) { console.error(err) }
@@ -250,7 +251,7 @@ export default function ProjectDetailPage() {
             const res = await fetch(`/api/tasks/${taskId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates)
+                body: JSON.stringify({ ...updates, userId: currentUser?.id })
             })
             const data = await res.json()
             if (data.task) {
@@ -305,6 +306,14 @@ export default function ProjectDetailPage() {
             if (data.checklist) {
                 setTaskChecklists(prev => [...prev, data.checklist])
                 setNewChecklistTitle('')
+                // Update stats locally
+                setTasks(prev => prev.map(t => t.id === selectedTask.id ? {
+                    ...t,
+                    checklistStats: {
+                        total: (t.checklistStats?.total || 0) + 1,
+                        completed: t.checklistStats?.completed || 0
+                    }
+                } : t))
             }
         } catch (err) { console.error(err) }
     }
@@ -318,6 +327,14 @@ export default function ProjectDetailPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: item.id, completed: !item.completed })
             })
+            // Update stats locally
+            setTasks(prev => prev.map(t => t.id === item.task_id ? {
+                ...t,
+                checklistStats: {
+                    total: t.checklistStats?.total || 0,
+                    completed: (t.checklistStats?.completed || 0) + (!item.completed ? 1 : -1)
+                }
+            } : t))
         } catch (err) { console.error(err) }
     }
 
@@ -326,6 +343,17 @@ export default function ProjectDetailPage() {
         setTaskChecklists(prev => prev.filter(c => c.id !== id))
         try {
             await fetch(`/api/checklists?id=${id}`, { method: 'DELETE' })
+            // Update stats locally
+            if (selectedTask?.id) {
+                const deletedItem = taskChecklists.find(c => c.id === id)
+                setTasks(prev => prev.map(t => t.id === selectedTask.id ? {
+                    ...t,
+                    checklistStats: {
+                        total: (t.checklistStats?.total || 0) - 1,
+                        completed: (t.checklistStats?.completed || 0) - (deletedItem?.completed ? 1 : 0)
+                    }
+                } : t))
+            }
         } catch (err) { console.error(err) }
     }
 
@@ -371,7 +399,7 @@ export default function ProjectDetailPage() {
             await fetch(`/api/tasks/${draggedTask.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus, position: getColumnTasks(newStatus).length })
+                body: JSON.stringify({ status: newStatus, position: getColumnTasks(newStatus).length, userId: currentUser?.id })
             })
         } catch { fetchAll() }
         setDraggedTask(null)
@@ -383,7 +411,7 @@ export default function ProjectDetailPage() {
         try {
             const res = await fetch('/api/projects/links', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId, label: newLink.label, url: newLink.url, type: newLink.type })
+                body: JSON.stringify({ projectId, label: newLink.label, url: newLink.url, type: newLink.type, userId: currentUser?.id })
             })
             const data = await res.json()
             if (data.link) setProjectLinks(prev => [...prev, data.link])
@@ -394,13 +422,13 @@ export default function ProjectDetailPage() {
     const handleDeleteLink = async (id: string) => {
         if (!confirm('ต้องการลบลิ้งค์นี้จริงหรือไม่?')) return
         setProjectLinks(prev => prev.filter(l => l.id !== id))
-        try { await fetch(`/api/projects/links?id=${id}`, { method: 'DELETE' }) } catch { }
+        try { await fetch(`/api/projects/links?id=${id}&userId=${currentUser?.id}`, { method: 'DELETE' }) } catch { }
     }
 
     const handleDeleteNote = async (id: string) => {
         if (!confirm('ต้องการลบบันทึกนี้ใช่หรือไม่?')) return
         setNotes(prev => prev.filter(n => n.id !== id))
-        try { await fetch(`/api/projects/notes?id=${id}`, { method: 'DELETE' }) } catch { }
+        try { await fetch(`/api/projects/notes?id=${id}&userId=${currentUser?.id}`, { method: 'DELETE' }) } catch { }
     }
 
     const handleUpdateNote = async (id: string) => {
@@ -409,7 +437,7 @@ export default function ProjectDetailPage() {
             const res = await fetch('/api/projects/notes', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, content: editingNoteContent })
+                body: JSON.stringify({ id, content: editingNoteContent, userId: currentUser?.id })
             })
             const data = await res.json()
             if (data.note) {
@@ -1046,6 +1074,16 @@ export default function ProjectDetailPage() {
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
                                                 </div>
+                                                {/* Checklist Progress */}
+                                                {task.checklistStats && task.checklistStats.total > 0 && (
+                                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] text-zinc-400">
+                                                        <CheckSquare className={`w-3 h-3 ${task.checklistStats.completed === task.checklistStats.total ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                                                        <span className={task.checklistStats.completed === task.checklistStats.total ? 'text-emerald-400 font-medium' : ''}>
+                                                            {task.checklistStats.completed}/{task.checklistStats.total}
+                                                        </span>
+                                                    </div>
+                                                )}
+
                                                 {/* Meta row */}
                                                 <div className="flex items-center gap-2 mt-2 ml-6 flex-wrap">
                                                     {task.due_date && (
@@ -1170,8 +1208,8 @@ export default function ProjectDetailPage() {
                                                         key={m.user_id}
                                                         onClick={() => handleToggleAssignee(m.user_id)}
                                                         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all duration-200 group/member ${isAssigned
-                                                                ? 'bg-violet-500/10 border-violet-500/30 text-white'
-                                                                : 'bg-white/[0.02] border-white/[0.04] text-midnight-400 hover:border-white/[0.1] hover:text-white'
+                                                            ? 'bg-violet-500/10 border-violet-500/30 text-white'
+                                                            : 'bg-white/[0.02] border-white/[0.04] text-midnight-400 hover:border-white/[0.1] hover:text-white'
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-2.5">

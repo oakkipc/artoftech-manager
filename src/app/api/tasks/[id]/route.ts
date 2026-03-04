@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logActivity } from '@/lib/logger'
 
 const getAdminClient = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -49,6 +50,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
             }
         }
 
+        // Log Activity
+        await logActivity({
+            userId: body.userId || null,
+            action: 'UPDATE',
+            entityType: 'TASK',
+            entityId: id,
+            details: {
+                title: task.title,
+                updates: Object.keys(updateData),
+                assigneeCount: body.assigneeIds?.length
+            }
+        })
+
         // Fetch current assignees
         const { data: assigneesData } = await supabase
             .from('task_assignees')
@@ -67,7 +81,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params
+        const { searchParams } = new URL(request.url)
+        const userId = searchParams.get('userId')
+
         const supabase = getAdminClient()
+
+        // Get task info before deleting for log
+        const { data: taskData } = await supabase
+            .from('tasks')
+            .select('title')
+            .eq('id', id)
+            .single()
 
         const { error } = await supabase
             .from('tasks')
@@ -77,6 +101,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
+
+        // Log Activity
+        await logActivity({
+            userId: userId || null,
+            action: 'DELETE',
+            entityType: 'TASK',
+            entityId: id,
+            details: { title: taskData?.title }
+        })
 
         return NextResponse.json({ message: 'Deleted' })
     } catch (error) {

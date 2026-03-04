@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logActivity } from '@/lib/logger'
 
 const getAdminClient = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -43,9 +44,25 @@ export async function GET(request: Request) {
             }
         }
 
+        // Fetch checklist counts
+        const { data: checklistData } = await supabase
+            .from('task_checklists')
+            .select('task_id, completed')
+            .in('task_id', tasks?.map(t => t.id) || [])
+
+        const checklistMap: Record<string, { total: number, completed: number }> = {}
+        if (checklistData) {
+            checklistData.forEach((c: any) => {
+                if (!checklistMap[c.task_id]) checklistMap[c.task_id] = { total: 0, completed: 0 }
+                checklistMap[c.task_id].total++
+                if (c.completed) checklistMap[c.task_id].completed++
+            })
+        }
+
         const enrichedTasks = (tasks || []).map(t => ({
             ...t,
-            assignees: (t.task_assignees || []).map((ta: any) => usersMap[ta.user_id]).filter(Boolean)
+            assignees: (t.task_assignees || []).map((ta: any) => usersMap[ta.user_id]).filter(Boolean),
+            checklistStats: checklistMap[t.id] || { total: 0, completed: 0 }
         }))
 
         return NextResponse.json({ tasks: enrichedTasks })
@@ -57,7 +74,7 @@ export async function GET(request: Request) {
 // POST: Create a new task
 export async function POST(request: Request) {
     try {
-        const { projectId, title, description, status, assigneeIds, dueDate, categoryId } = await request.json()
+        const { projectId, title, description, status, assigneeIds, dueDate, categoryId, userId } = await request.json()
 
         if (!projectId || !title) {
             return NextResponse.json({ error: 'projectId and title are required' }, { status: 400 })
@@ -103,6 +120,15 @@ export async function POST(request: Request) {
             }))
             await supabase.from('task_assignees').insert(assigneeData)
         }
+
+        // Log Activity
+        await logActivity({
+            userId: userId || null,
+            action: 'CREATE',
+            entityType: 'TASK',
+            entityId: task.id,
+            details: { title: task.title, status: task.status }
+        })
 
         // Fetch assignees
         const { data: assigneesData } = await supabase

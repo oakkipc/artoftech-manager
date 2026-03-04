@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logActivity } from '@/lib/logger'
 
 const getAdminClient = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -53,6 +54,16 @@ export async function POST(request: Request) {
             console.error('[ProjectNotes API POST] Supabase Error:', error)
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
+
+        // Log Activity
+        await logActivity({
+            userId: authorId || null,
+            action: 'CREATE',
+            entityType: 'NOTE',
+            entityId: data.id,
+            details: { projectId: data.project_id }
+        })
+
         return NextResponse.json({ note: data })
     } catch (err) {
         console.error('[ProjectNotes API POST] Server Error:', err)
@@ -75,6 +86,18 @@ export async function DELETE(request: Request) {
             .eq('id', id)
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+        // Log Activity
+        const { searchParams } = new URL(request.url)
+        const userId = searchParams.get('userId')
+        await logActivity({
+            userId: userId || null,
+            action: 'DELETE',
+            entityType: 'NOTE',
+            entityId: id,
+            details: { id }
+        })
+
         return NextResponse.json({ message: 'Deleted' })
     } catch {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
@@ -99,6 +122,17 @@ export async function PUT(request: Request) {
             .single()
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+        // Log Activity
+        const { userId } = await request.clone().json().catch(() => ({}))
+        await logActivity({
+            userId: userId || null,
+            action: 'UPDATE',
+            entityType: 'NOTE',
+            entityId: id,
+            details: { projectId: data.project_id }
+        })
+
         return NextResponse.json({ note: data })
     } catch (err) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })

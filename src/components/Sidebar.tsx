@@ -43,6 +43,7 @@ const navItems = [
             { name: 'Budget', href: '/budget', icon: Wallet },
             { name: 'Vendors', href: '/admin/vendors', icon: Users },
             { name: 'Clients', href: '/admin/clients', icon: Building2 },
+            { name: 'Activity Logs', href: '/admin/logs', icon: Activity },
         ]
     },
     {
@@ -104,7 +105,7 @@ export function Sidebar() {
                 fetch('/api/admin/projects', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ projectId: p.id, pinOrder: idx })
+                    body: JSON.stringify({ projectId: p.id, pinOrder: idx, userId: user?.id })
                 })
             ))
         } catch (err) {

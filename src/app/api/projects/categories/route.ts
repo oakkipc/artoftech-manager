@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logActivity } from '@/lib/logger'
 
 const getAdminClient = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -31,7 +32,8 @@ export async function GET(request: Request) {
 // POST: Create a category
 export async function POST(request: Request) {
     try {
-        const { projectId, name, color } = await request.json()
+        const body = await request.clone().json().catch(() => ({}))
+        const { projectId, name, color, userId } = body
         if (!projectId || !name?.trim()) return NextResponse.json({ error: 'projectId and name required' }, { status: 400 })
 
         const supabase = getAdminClient()
@@ -42,6 +44,16 @@ export async function POST(request: Request) {
             .single()
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+        // Log Activity
+        await logActivity({
+            userId: userId || null,
+            action: 'CREATE',
+            entityType: 'CATEGORY',
+            entityId: data.id,
+            details: { name: data.name, projectId: data.project_id }
+        })
+
         return NextResponse.json({ category: data })
     } catch {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
@@ -58,6 +70,17 @@ export async function DELETE(request: Request) {
         const supabase = getAdminClient()
         const { error } = await supabase.from('task_categories').delete().eq('id', id)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+        // Log Activity
+        const userId = searchParams.get('userId')
+        await logActivity({
+            userId: userId || null,
+            action: 'DELETE',
+            entityType: 'CATEGORY',
+            entityId: id,
+            details: { id }
+        })
+
         return NextResponse.json({ message: 'Deleted' })
     } catch {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
@@ -67,7 +90,8 @@ export async function DELETE(request: Request) {
 // PATCH: Update a category
 export async function PATCH(request: Request) {
     try {
-        const { id, name, color } = await request.json()
+        const body = await request.clone().json().catch(() => ({}))
+        const { id, name, color, userId } = body
         if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
         const supabase = getAdminClient()
@@ -83,6 +107,16 @@ export async function PATCH(request: Request) {
             .single()
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+        // Log Activity
+        await logActivity({
+            userId: userId || null,
+            action: 'UPDATE',
+            entityType: 'CATEGORY',
+            entityId: id,
+            details: { name: data.name, projectId: data.project_id }
+        })
+
         return NextResponse.json({ category: data })
     } catch {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
