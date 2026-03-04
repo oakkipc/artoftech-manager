@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
         const { data: tasks, error } = await supabase
             .from('tasks')
-            .select('*')
+            .select('*, task_assignees(user_id)')
             .eq('project_id', projectId)
             .order('position', { ascending: true })
 
@@ -29,15 +29,15 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
-        // Fetch assigned users separately
-        const userIds = [...new Set((tasks || []).filter(t => t.assigned_to).map(t => t.assigned_to))]
+        // Fetch all unique user IDs from all tasks
+        const allUserIds = [...new Set((tasks || []).flatMap(t => t.task_assignees?.map((ta: any) => ta.user_id) || []))]
         let usersMap: Record<string, any> = {}
 
-        if (userIds.length > 0) {
+        if (allUserIds.length > 0) {
             const { data: usersData } = await supabase
                 .from('users')
                 .select('id, name, email')
-                .in('id', userIds)
+                .in('id', allUserIds)
             if (usersData) {
                 usersMap = Object.fromEntries(usersData.map(u => [u.id, u]))
             }
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
 
         const enrichedTasks = (tasks || []).map(t => ({
             ...t,
-            assigned_user: t.assigned_to ? usersMap[t.assigned_to] || null : null
+            assignees: (t.task_assignees || []).map((ta: any) => usersMap[ta.user_id]).filter(Boolean)
         }))
 
         return NextResponse.json({ tasks: enrichedTasks })
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 // POST: Create a new task
 export async function POST(request: Request) {
     try {
-        const { projectId, title, description, status, assignedTo, dueDate, categoryId } = await request.json()
+        const { projectId, title, description, status, assigneeIds, dueDate, categoryId } = await request.json()
 
         if (!projectId || !title) {
             return NextResponse.json({ error: 'projectId and title are required' }, { status: 400 })
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
         const position = (maxPos?.position ?? -1) + 1
 
-        const { data, error } = await supabase
+        const { data: task, error: taskError } = await supabase
             .from('tasks')
             .insert({
                 project_id: projectId,
@@ -85,29 +85,34 @@ export async function POST(request: Request) {
                 description: description || null,
                 status: status || 'TODO',
                 position,
-                assigned_to: assignedTo || null,
                 due_date: dueDate || null,
                 category_id: categoryId || null
             })
             .select('*')
             .single()
 
-        if (error) {
-            return NextResponse.json({ error: error.message }, { status: 500 })
+        if (taskError) {
+            return NextResponse.json({ error: taskError.message }, { status: 500 })
         }
 
-        // Fetch assigned user
-        let assigned_user = null
-        if (data.assigned_to) {
-            const { data: userData } = await supabase
-                .from('users')
-                .select('id, name, email')
-                .eq('id', data.assigned_to)
-                .single()
-            assigned_user = userData
+        // Add multiple assignees
+        if (assigneeIds && Array.isArray(assigneeIds) && assigneeIds.length > 0) {
+            const assigneeData = assigneeIds.map(userId => ({
+                task_id: task.id,
+                user_id: userId
+            }))
+            await supabase.from('task_assignees').insert(assigneeData)
         }
 
-        return NextResponse.json({ task: { ...data, assigned_user } })
+        // Fetch assignees
+        const { data: assigneesData } = await supabase
+            .from('task_assignees')
+            .select('users(id, name, email)')
+            .eq('task_id', task.id)
+
+        const assignees = (assigneesData || []).map((a: any) => a.users)
+
+        return NextResponse.json({ task: { ...task, assignees } })
     } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }

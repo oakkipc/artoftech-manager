@@ -20,33 +20,44 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         if (body.description !== undefined) updateData.description = body.description
         if (body.status !== undefined) updateData.status = body.status
         if (body.position !== undefined) updateData.position = body.position
-        if (body.assignedTo !== undefined) updateData.assigned_to = body.assignedTo || null
-        if (body.dueDate !== undefined) updateData.due_date = body.dueDate || null
-        if (body.categoryId !== undefined) updateData.category_id = body.categoryId || null
-
-        const { data, error } = await supabase
+        const { data: task, error: updateError } = await supabase
             .from('tasks')
             .update(updateData)
             .eq('id', id)
             .select('*')
             .single()
 
-        if (error) {
-            return NextResponse.json({ error: error.message }, { status: 500 })
+        if (updateError) {
+            return NextResponse.json({ error: updateError.message }, { status: 500 })
         }
 
-        // Fetch assigned user separately
-        let assigned_user = null
-        if (data.assigned_to) {
-            const { data: userData } = await supabase
-                .from('users')
-                .select('id, name, email')
-                .eq('id', data.assigned_to)
-                .single()
-            assigned_user = userData
+        // Sync assignees if provided
+        if (body.assigneeIds !== undefined && Array.isArray(body.assigneeIds)) {
+            // Remove existing
+            await supabase
+                .from('task_assignees')
+                .delete()
+                .eq('task_id', id)
+
+            // Insert new
+            if (body.assigneeIds.length > 0) {
+                const assigneeData = body.assigneeIds.map((userId: string) => ({
+                    task_id: id,
+                    user_id: userId
+                }))
+                await supabase.from('task_assignees').insert(assigneeData)
+            }
         }
 
-        return NextResponse.json({ task: { ...data, assigned_user } })
+        // Fetch current assignees
+        const { data: assigneesData } = await supabase
+            .from('task_assignees')
+            .select('users(id, name, email)')
+            .eq('task_id', id)
+
+        const assignees = (assigneesData || []).map((a: any) => a.users)
+
+        return NextResponse.json({ task: { ...task, assignees } })
     } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }

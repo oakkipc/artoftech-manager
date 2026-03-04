@@ -49,8 +49,7 @@ interface Task {
     status: string
     position: number
     due_date: string | null
-    assigned_to: string | null
-    assigned_user: { id: string; name: string; email: string } | null
+    assignees: { id: string; name: string; email: string }[]
     category_id: string | null
     created_at: string
     checklists?: ChecklistItem[]
@@ -278,9 +277,19 @@ export default function ProjectDetailPage() {
         await updateTask(selectedTask.id, { dueDate: date || null })
     }
 
-    const handleAssignMember = async (userId: string) => {
+    const handleToggleAssignee = async (userId: string) => {
         if (!selectedTask) return
-        await updateTask(selectedTask.id, { assignedTo: userId || null })
+        const currentAssignees = selectedTask.assignees || []
+        const isAssigned = currentAssignees.some(u => u.id === userId)
+
+        let newAssigneeIds: string[]
+        if (isAssigned) {
+            newAssigneeIds = currentAssignees.filter(u => u.id !== userId).map(u => u.id)
+        } else {
+            newAssigneeIds = [...currentAssignees.map(u => u.id), userId]
+        }
+
+        await updateTask(selectedTask.id, { assigneeIds: newAssigneeIds })
     }
 
     // Checklist actions
@@ -1045,12 +1054,13 @@ export default function ProjectDetailPage() {
                                                             {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                         </span>
                                                     )}
-                                                    {task.assigned_user && (
-                                                        <div className="flex items-center gap-1">
-                                                            <div className="w-4 h-4 rounded bg-violet-500/20 flex items-center justify-center">
-                                                                <span className="text-[8px] font-bold text-violet-400">{task.assigned_user.name.charAt(0)}</span>
-                                                            </div>
-                                                            <span className="text-[11px] text-midnight-500">{task.assigned_user.name}</span>
+                                                    {task.assignees && task.assignees.length > 0 && (
+                                                        <div className="flex -space-x-1.5 overflow-hidden">
+                                                            {task.assignees.map((user) => (
+                                                                <div key={user.id} className="w-5 h-5 rounded-full ring-2 ring-[#0a0a1a] bg-violet-500/20 flex items-center justify-center shrink-0" title={user.name}>
+                                                                    <span className="text-[8px] font-bold text-violet-400">{user.name.charAt(0)}</span>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     )}
                                                 </div>
@@ -1149,17 +1159,35 @@ export default function ProjectDetailPage() {
                                             className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]" />
                                     </div>
                                     <div>
-                                        <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                            <UserPlus className="w-3.5 h-3.5" /> Assignee
+                                        <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                            <Users className="w-3.5 h-3.5" /> Assignees
                                         </h4>
-                                        <select value={selectedTask.assigned_to || ''}
-                                            onChange={(e) => handleAssignMember(e.target.value)}
-                                            className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/40 [color-scheme:dark]">
-                                            <option value="" className="bg-[#0f0f23]">Unassigned</option>
-                                            {members.map((m) => (
-                                                <option key={m.user_id} value={m.user_id} className="bg-[#0f0f23]">{m.users?.name}</option>
-                                            ))}
-                                        </select>
+                                        <div className="space-y-2">
+                                            {members.map((m) => {
+                                                const isAssigned = (selectedTask.assignees || []).some(u => u.id === m.user_id)
+                                                return (
+                                                    <button
+                                                        key={m.user_id}
+                                                        onClick={() => handleToggleAssignee(m.user_id)}
+                                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all duration-200 group/member ${isAssigned
+                                                                ? 'bg-violet-500/10 border-violet-500/30 text-white'
+                                                                : 'bg-white/[0.02] border-white/[0.04] text-midnight-400 hover:border-white/[0.1] hover:text-white'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shadow-lg ${isAssigned ? 'bg-violet-600 text-white' : 'bg-white/[0.06] text-midnight-500 group-hover/member:text-violet-400'
+                                                                }`}>
+                                                                {m.users?.name?.charAt(0)}
+                                                            </div>
+                                                            <span className="text-xs font-medium">{m.users?.name}</span>
+                                                        </div>
+                                                        {isAssigned && (
+                                                            <Check className="w-3.5 h-3.5 text-violet-400" />
+                                                        )}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
                                     <div>
                                         <h4 className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
