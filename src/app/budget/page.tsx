@@ -175,14 +175,22 @@ export default function BudgetPage() {
                     endDate: ''
                 })
                 fetchInitialData()
+            } else {
+                const errorData = await res.json()
+                alert(`ล้มเหลว: ${errorData.error || 'ไม่สามารถบันทึกข้อมูลได้'}`)
             }
+        } catch (err) {
+            console.error(err)
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์')
         } finally {
             setSubmitting(false)
         }
     }
 
     const startEdit = (t: Transaction) => {
-        setEditingId(t.id)
+        // Use originalId for recurring (virtual) transactions, otherwise use id
+        const realId = (t as any).originalId || t.id
+        setEditingId(realId)
         setFormData({
             projectId: t.project_id,
             vendorId: t.vendor_id || '',
