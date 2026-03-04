@@ -56,6 +56,7 @@ export async function GET(request: Request) {
                             expandedTransactions.push({
                                 ...t,
                                 date: current.toISOString().split('T')[0],
+                                masterDate: t.date,
                                 id: `${t.id}-${current.toISOString().split('T')[0]}`,
                                 originalId: t.id,
                                 isVirtual: true

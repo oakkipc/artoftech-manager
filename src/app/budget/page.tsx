@@ -199,7 +199,7 @@ export default function BudgetPage() {
             amount: t.amount.toString(),
             type: t.type,
             description: t.description || '',
-            date: t.date,
+            date: (t as any).masterDate || t.date,
             endDate: (t as any).end_date || ''
         })
         setShowModal(true)
@@ -669,7 +669,9 @@ export default function BudgetPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Start Date</label>
+                                            <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">
+                                                {formData.frequency === 'ONCE' ? 'Transaction Date' : 'Series Start Date'}
+                                            </label>
                                             <input
                                                 type="date"
                                                 required
@@ -681,7 +683,7 @@ export default function BudgetPage() {
                                     </div>
                                     {formData.frequency !== 'ONCE' && (
                                         <div className="animate-in slide-in-from-top-2 duration-200">
-                                            <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">End Date (Optional)</label>
+                                            <label className="block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1">Series End Date (Optional)</label>
                                             <input
                                                 type="date"
                                                 value={formData.endDate}
