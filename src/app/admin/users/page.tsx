@@ -12,7 +12,11 @@ import {
   Search,
   ChevronDown,
   Shield,
-  MoreHorizontal
+  MoreHorizontal,
+  Plus,
+  Key,
+  Mail,
+  User as UserIcon
 } from 'lucide-react'
 
 interface User {
@@ -35,6 +39,8 @@ export default function AdminUsersPage() {
   const [selectedRole, setSelectedRole] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'MEMBER' })
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
@@ -84,6 +90,28 @@ export default function AdminUsersPage() {
     setShowRoleModal(true)
   }
 
+  const handleAddUser = async () => {
+    if (!newUser.name || !newUser.email || !newUser.password || submitting) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newUser, adminId: currentUser?.id })
+      })
+      const data = await res.json()
+      if (data.error) {
+        alert(data.error)
+      } else {
+        setShowAddModal(false)
+        setNewUser({ name: '', email: '', password: '', role: 'MEMBER' })
+        fetchUsers()
+      }
+    } catch (err) {
+      console.error(err)
+    } finally { setSubmitting(false) }
+  }
+
   const getRoleBadge = (role: string) => {
     const map: Record<string, string> = {
       SUPERADMIN: 'bg-red-500/10 text-red-400 border-red-500/20',
@@ -126,15 +154,23 @@ export default function AdminUsersPage() {
               <h1 className="text-xl font-bold text-white">User Management</h1>
               <p className="text-sm text-midnight-500">Manage team members and roles</p>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-midnight-600" />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-64 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white placeholder-midnight-600 focus:outline-none focus:border-violet-500/40 transition-colors"
-              />
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-midnight-600" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-64 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white placeholder-midnight-600 focus:outline-none focus:border-violet-500/40 transition-colors"
+                />
+              </div>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-violet-500/10"
+              >
+                <Plus className="w-4 h-4" /> Add User
+              </button>
             </div>
           </div>
         </div>
@@ -247,6 +283,93 @@ export default function AdminUsersPage() {
                 className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Updating...' : 'Update'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Add User Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#0f0f23] border border-white/[0.08] rounded-2xl p-8 w-full max-w-md shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-6">Add New User</h3>
+
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 block">Name</label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-midnight-600" />
+                  <input
+                    type="text"
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                    placeholder="Full Name"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:outline-none focus:border-violet-500/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 block">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-midnight-600" />
+                  <input
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    placeholder="name@example.com"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:outline-none focus:border-violet-500/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 block">Password</label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-midnight-600" />
+                  <input
+                    type="password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    placeholder="Create password"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:outline-none focus:border-violet-500/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-midnight-500 uppercase tracking-wider mb-2 block">Initial Role</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {ROLES.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setNewUser({ ...newUser, role })}
+                      className={`px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${newUser.role === role
+                        ? 'bg-violet-600 text-white border-violet-600'
+                        : 'bg-white/[0.02] text-midnight-400 border-white/[0.06] hover:border-white/[0.1]'
+                        }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-midnight-400 border border-white/[0.08] rounded-xl hover:bg-white/[0.04]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddUser}
+                disabled={submitting}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-all disabled:opacity-50"
+              >
+                {submitting ? 'Creating...' : 'Create User'}
               </button>
             </div>
           </div>
