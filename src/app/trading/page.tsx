@@ -17,19 +17,26 @@ interface TradingAccount {
   total_lots?: number;
 }
 
+interface DailySnapshot {
+  account_id: string;
+  date: string;
+  equity: number;
+  balance: number;
+}
 
 export default function TradingPage() {
   const router = useRouter()
   const { isCollapsed } = useSidebar()
   const [isMounted, setIsMounted] = useState(false)
   const [accounts, setAccounts] = useState<TradingAccount[]>([])
+  const [snapshots, setSnapshots] = useState<Record<string, DailySnapshot>>({})
   const [goldPrice, setGoldPrice] = useState<number | null>(null)
   const [btcPrice, setBtcPrice] = useState<number | null>(null)
   const [thbRate, setThbRate] = useState<number | null>(null)
   const [now, setNow] = useState(new Date())
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
   const [cols, setCols] = useState<number>(3)
-  const [sortConfig, setSortConfig] = useState<{ key: 'equity' | 'dd' | 'name'; direction: 'asc' | 'desc' }>({
+  const [sortConfig, setSortConfig] = useState<{ key: 'equity' | 'dd' | 'name' | 'daily'; direction: 'asc' | 'desc' }>({
     key: 'equity',
     direction: 'desc'
   })
@@ -41,10 +48,13 @@ export default function TradingPage() {
     setIsMounted(true)
     if (window.innerWidth < 768) setViewMode('table')
     fetchAccounts()
+    fetchTodaySnapshots()
     fetchPrices()
     const timer = setInterval(() => setNow(new Date()), 10000)
     const priceTimer = setInterval(fetchPrices, 30000)
-    const channel = supabase.channel('trading_aot_manager').on('postgres_changes', { event: '*', schema: 'public', table: 'trading_accounts' }, () => fetchAccounts()).subscribe()
+    const channel = supabase.channel('trading_aot_manager')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trading_accounts' }, () => fetchAccounts())
+      .subscribe()
     return () => { clearInterval(timer); clearInterval(priceTimer); supabase.removeChannel(channel) }
   }, [])
 
@@ -78,28 +88,53 @@ export default function TradingPage() {
     }
   }
 
+  const fetchTodaySnapshots = async () => {
+    const bangkokNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+    const today = bangkokNow.toISOString().split('T')[0]
+    const { data } = await supabase.from('trading_daily_snapshots').select('*').eq('date', today)
+    if (data) {
+      const map: Record<string, DailySnapshot> = {}
+      data.forEach((s: DailySnapshot) => { map[s.account_id] = s })
+      setSnapshots(map)
+    }
+  }
+
+  const getDailyPnL = (acc: TradingAccount) => {
+    const snap = snapshots[String(acc.account_id)]
+    if (!snap || snap.equity === 0) return null
+    const currentEq = acc.is_usc ? acc.equity / 100 : acc.equity
+    const snapEq = acc.is_usc ? snap.equity / 100 : snap.equity
+    const pct = ((currentEq - snapEq) / Math.abs(snapEq)) * 100
+    const diff = currentEq - snapEq
+    return { pct, diff }
+  }
+
   const sortedAccounts = useMemo(() => {
     const sortableItems = [...accounts]
     sortableItems.sort((a, b) => {
-      let aVal: any, bVal: any
+      let aVal: number, bVal: number
       if (sortConfig.key === 'equity') {
         aVal = a.is_usc ? a.equity / 100 : a.equity
         bVal = b.is_usc ? b.equity / 100 : b.equity
       } else if (sortConfig.key === 'dd') {
         aVal = a.balance > 0 ? ((a.equity - a.balance) / a.balance) * 100 : 0
         bVal = b.balance > 0 ? ((b.equity - b.balance) / b.balance) * 100 : 0
+      } else if (sortConfig.key === 'daily') {
+        aVal = getDailyPnL(a)?.pct ?? 0
+        bVal = getDailyPnL(b)?.pct ?? 0
       } else {
-        aVal = a.account_name.toLowerCase()
-        bVal = b.account_name.toLowerCase()
+        aVal = a.account_name.toLowerCase() < b.account_name.toLowerCase() ? -1 : 1
+        bVal = 0
       }
+      if (sortConfig.key === 'name') return sortConfig.direction === 'asc' ? (aVal as any) : -(aVal as any)
       if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1
       if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1
       return 0
     })
     return sortableItems
-  }, [accounts, sortConfig])
+  }, [accounts, sortConfig, snapshots])
 
-  const requestSort = (key: 'equity' | 'dd' | 'name') => {
+  const requestSort = (key: 'equity' | 'dd' | 'name' | 'daily') => {
     let direction: 'asc' | 'desc' = 'desc'
     if (sortConfig.key === key && sortConfig.direction === 'desc') direction = 'asc'
     setSortConfig({ key, direction })
@@ -126,6 +161,10 @@ export default function TradingPage() {
   }
 
   const totalEquityUSD = accounts.reduce((sum, a) => a.is_demo ? sum : sum + (a.is_usc ? a.equity / 100 : a.equity), 0)
+  const totalDailyPnL = accounts.reduce((sum, a) => {
+    if (a.is_demo) return sum
+    return sum + (getDailyPnL(a)?.diff ?? 0)
+  }, 0)
 
   if (!isMounted) return (
     <div className="min-h-screen bg-midnight-950 flex items-center justify-center">
@@ -136,26 +175,33 @@ export default function TradingPage() {
   return (
     <div className="min-h-screen bg-midnight-950 flex">
       <Sidebar />
-      <main className={`flex-1 min-w-0 transition-all duration-300`}>
-        {/* Page Header */}
+      <main className="flex-1 min-w-0 transition-all duration-300">
+        {/* Header */}
         <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-white">Trading Dashboard</h1>
             <p className="text-xs text-slate-500">AOT Terminal — Live Portfolio Monitor</p>
           </div>
-          <div className="text-right">
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Net Equity</p>
-            <p className="text-xl font-mono font-bold text-white">
-              {totalEquityUSD.toLocaleString(undefined, { minimumFractionDigits: 3 })} <span className="text-xs text-slate-400">USD</span>
-            </p>
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">{"Today's P&L"}</p>
+              <p className={`text-lg font-mono font-bold ${totalDailyPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {totalDailyPnL >= 0 ? '+' : ''}{totalDailyPnL.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-xs opacity-60">USD</span>
+              </p>
+            </div>
+            <div className="text-right border-l border-slate-800 pl-6">
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Net Equity</p>
+              <p className="text-xl font-mono font-bold text-white">
+                {totalEquityUSD.toLocaleString(undefined, { minimumFractionDigits: 3 })} <span className="text-xs text-slate-400">USD</span>
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="p-6 bg-[#020617] min-h-[calc(100vh-65px)] font-sans uppercase tracking-tight text-slate-200">
 
-          {/* CONTROLS + PRICE TICKER */}
+          {/* Controls + Price Ticker */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-            {/* View controls */}
             <div className="flex items-center gap-2 bg-slate-950/50 p-1 rounded-2xl border border-slate-800/50">
               <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
                 <button onClick={() => setViewMode('grid')} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold ${viewMode === 'grid' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500'}`}>CARDS</button>
@@ -170,7 +216,6 @@ export default function TradingPage() {
               )}
             </div>
 
-            {/* Price Ticker */}
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-800 px-4 py-2 rounded-2xl">
                 <span className="text-[8px] font-black text-amber-400 tracking-widest">XAUUSD</span>
@@ -209,19 +254,35 @@ export default function TradingPage() {
               <table className="w-full text-left border-collapse table-fixed">
                 <thead className="bg-slate-950 text-[9px] font-black text-slate-500 border-b border-slate-800">
                   <tr>
-                    <th onClick={() => requestSort('name')} className="p-4 w-[30%] cursor-pointer hover:text-white transition-colors">NAME {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                    <th onClick={() => requestSort('equity')} className="p-4 text-right w-[35%] cursor-pointer hover:text-white transition-colors">EQUITY/BAL {sortConfig.key === 'equity' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                    <th onClick={() => requestSort('dd')} className="p-4 text-center w-[20%] text-red-400 cursor-pointer hover:text-red-200 transition-colors">DD% {sortConfig.key === 'dd' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => requestSort('name')} className="p-4 w-[22%] cursor-pointer hover:text-white transition-colors">NAME {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => requestSort('equity')} className="p-4 text-right w-[26%] cursor-pointer hover:text-white transition-colors">EQUITY/BAL {sortConfig.key === 'equity' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => requestSort('daily')} className="p-4 text-center w-[22%] text-emerald-400 cursor-pointer hover:text-emerald-200 transition-colors">{"TODAY'S P&L"} {sortConfig.key === 'daily' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => requestSort('dd')} className="p-4 text-center w-[15%] text-red-400 cursor-pointer hover:text-red-200 transition-colors">DD% {sortConfig.key === 'dd' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                     <th className="p-4 text-center w-[15%]"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50 text-[11px] md:text-sm">
                   {sortedAccounts.map((acc) => {
                     const dd = acc.balance > 0 ? ((acc.equity - acc.balance) / acc.balance) * 100 : 0
+                    const daily = getDailyPnL(acc)
                     return (
                       <tr key={acc.account_id} className={`hover:bg-slate-800/30 transition-colors ${acc.is_demo ? 'opacity-60' : ''}`}>
-                        <td className="p-4 overflow-hidden"><p className="font-bold text-white truncate">{acc.account_name}</p><p className="text-[8px] text-slate-500 font-mono">ID: {acc.account_id}</p></td>
-                        <td className="p-4 text-right font-mono font-bold"><div className="text-white">{acc.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-[8px] text-slate-500">{acc.is_usc ? 'USC' : 'USD'}</span></div><div className="text-[9px] text-slate-500 opacity-60">{acc.balance.toLocaleString()}</div></td>
+                        <td className="p-4 overflow-hidden">
+                          <p className="font-bold text-white truncate">{acc.account_name}</p>
+                          <p className="text-[8px] text-slate-500 font-mono">ID: {acc.account_id}</p>
+                        </td>
+                        <td className="p-4 text-right font-mono font-bold">
+                          <div className="text-white">{acc.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-[8px] text-slate-500">{acc.is_usc ? 'USC' : 'USD'}</span></div>
+                          <div className="text-[9px] text-slate-500 opacity-60">{acc.balance.toLocaleString()}</div>
+                        </td>
+                        <td className="p-4 text-center font-mono font-bold">
+                          {daily ? (
+                            <div className={daily.pct >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                              <div>{daily.pct >= 0 ? '+' : ''}{daily.pct.toFixed(2)}%</div>
+                              <div className="text-[9px] opacity-70">{daily.diff >= 0 ? '+' : ''}{daily.diff.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                            </div>
+                          ) : <span className="text-slate-600 text-[9px]">—</span>}
+                        </td>
                         <td className={`p-4 text-center font-mono font-bold ${dd < 0 ? 'text-red-500' : 'text-emerald-400'}`}>{dd.toFixed(1)}%</td>
                         <td className="p-4 text-center">
                           <div className="flex items-center justify-center gap-2">
@@ -245,9 +306,10 @@ export default function TradingPage() {
                 const dd = acc.balance > 0 ? ((acc.equity - acc.balance) / acc.balance) * 100 : 0
                 const unit = acc.is_usc ? 'USC' : 'USD'
                 const color = acc.is_usc ? 'text-amber-500' : 'text-blue-400'
+                const daily = getDailyPnL(acc)
                 return (
                   <div key={acc.account_id} className={`bg-slate-900 border-2 rounded-[2rem] p-6 shadow-2xl transition-all duration-500 ${offline ? 'border-red-500/40' : 'border-slate-800 hover:border-blue-500/50'} ${acc.is_demo ? 'opacity-80 shadow-none' : ''}`}>
-                    <div className="flex justify-between items-start mb-6 uppercase">
+                    <div className="flex justify-between items-start mb-5 uppercase">
                       <div>
                         <h2 className={`text-base font-black truncate ${cols >= 3 ? 'max-w-[120px]' : 'max-w-[200px]'} ${offline ? 'text-red-400' : 'text-white'}`}>{acc.account_name}</h2>
                         <p className="text-[9px] text-slate-500 font-mono">ID: {acc.account_id}</p>
@@ -258,7 +320,7 @@ export default function TradingPage() {
                       </div>
                     </div>
 
-                    <div className="text-center mb-6">
+                    <div className="text-center mb-4">
                       <p className={`${color} text-[9px] font-black mb-1 opacity-80 uppercase tracking-widest`}>Equity</p>
                       <div className="flex items-baseline justify-center gap-1">
                         <span className={`${cols >= 3 ? 'text-3xl md:text-4xl' : 'text-4xl md:text-6xl'} font-mono font-black text-white leading-none tracking-tighter`}>
@@ -269,9 +331,20 @@ export default function TradingPage() {
                       <div className="mt-2 text-[11px] font-mono font-bold text-slate-400 uppercase">BAL: {acc.balance.toLocaleString()} {unit}</div>
                     </div>
 
-                    <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800/50 text-center mb-4">
+                    {/* Daily P&L */}
+                    <div className={`p-3 rounded-xl border text-center mb-3 ${daily ? (daily.pct >= 0 ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20') : 'bg-slate-950/40 border-slate-800/50'}`}>
+                      <p className="text-[8px] text-slate-500 font-black mb-1 uppercase tracking-widest">{"Today's P&L"}</p>
+                      {daily ? (
+                        <div className={`font-mono font-bold ${daily.pct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          <span className="text-lg">{daily.pct >= 0 ? '+' : ''}{daily.pct.toFixed(2)}%</span>
+                          <span className="text-[10px] ml-2 opacity-70">{daily.diff >= 0 ? '+' : ''}{daily.diff.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      ) : <span className="text-slate-600 text-[10px]">No snapshot yet</span>}
+                    </div>
+
+                    <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/50 text-center mb-4">
                       <p className="text-[8px] text-slate-500 font-black mb-1 uppercase tracking-widest">Drawdown</p>
-                      <p className={`${cols >= 3 ? 'text-xl' : 'text-2xl'} font-bold font-mono ${dd < 0 ? 'text-red-500' : 'text-emerald-400'}`}>{dd.toFixed(2)}%</p>
+                      <p className={`text-xl font-bold font-mono ${dd < 0 ? 'text-red-500' : 'text-emerald-400'}`}>{dd.toFixed(2)}%</p>
                     </div>
 
                     <div className="flex justify-between items-center text-[9px] font-bold text-slate-600 border-t border-slate-800/40 pt-4 uppercase">
@@ -286,7 +359,7 @@ export default function TradingPage() {
           )}
         </div>
 
-        {/* DELETE CONFIRMATION MODAL */}
+        {/* DELETE MODAL */}
         {deleteTarget && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setDeleteTarget(null)}>
             <div className="bg-slate-900 border-2 border-red-500/30 rounded-3xl p-8 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
