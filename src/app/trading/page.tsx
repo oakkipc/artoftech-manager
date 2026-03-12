@@ -155,9 +155,8 @@ export default function TradingPage() {
 
   const isStale = (updatedAt: string) => {
     if (!updatedAt) return true
-    const diff = Math.abs((now.getTime() - new Date(updatedAt).getTime()) / 1000)
-    const actualDiff = diff > 20000 ? Math.abs(diff - 25200) : diff
-    return actualDiff > 180
+    const diff = (now.getTime() - new Date(updatedAt).getTime()) / 1000
+    return diff > 180
   }
 
   const totalEquityUSD = accounts.reduce((sum, a) => a.is_demo ? sum : sum + (a.is_usc ? a.equity / 100 : a.equity), 0)
