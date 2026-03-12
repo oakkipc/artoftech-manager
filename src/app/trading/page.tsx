@@ -218,7 +218,7 @@ export default function TradingPage() {
                 <button onClick={() => setViewMode('table')} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold ${viewMode === 'table' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500'}`}>TABLE</button>
               </div>
               {viewMode === 'grid' && (
-                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 ml-1">
+                <div className="hidden sm:flex bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 ml-1">
                   {[1, 2, 3, 4].map((n) => (
                     <button key={n} onClick={() => setCols(n)} className={`w-7 h-7 rounded-lg text-[10px] font-bold transition-all ${cols === n ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{n}</button>
                   ))}
@@ -310,7 +310,7 @@ export default function TradingPage() {
 
           {/* GRID VIEW */}
           {viewMode === 'grid' && (
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: '1.5rem' }}>
+            <div className={`grid gap-6 grid-cols-1 ${cols >= 2 ? 'sm:grid-cols-2' : ''} ${cols >= 3 ? 'sm:grid-cols-2 md:grid-cols-3' : ''} ${cols >= 4 ? 'sm:grid-cols-2 md:grid-cols-4' : ''}`}>
               {sortedAccounts.map((acc) => {
                 const offline = isStale(acc.updated_at)
                 const dd = acc.balance > 0 ? ((acc.equity - acc.balance) / acc.balance) * 100 : 0
