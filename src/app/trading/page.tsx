@@ -308,12 +308,12 @@ export default function TradingPage() {
                 const daily = getDailyPnL(acc)
                 return (
                   <div key={acc.account_id} className={`bg-slate-900 border-2 rounded-[2rem] p-6 shadow-2xl transition-all duration-500 ${offline ? 'border-red-500/40' : 'border-slate-800 hover:border-blue-500/50'} ${acc.is_demo ? 'opacity-80 shadow-none' : ''}`}>
-                    <div className="flex justify-between items-start mb-5 uppercase">
-                      <div>
-                        <h2 className={`text-base font-black truncate ${cols >= 3 ? 'max-w-[120px]' : 'max-w-[200px]'} ${offline ? 'text-red-400' : 'text-white'}`}>{acc.account_name}</h2>
+                    <div className="flex justify-between items-start mb-5 gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h2 className={`text-base font-black truncate uppercase ${offline ? 'text-red-400' : 'text-white'}`}>{acc.account_name}</h2>
                         <p className="text-[9px] text-slate-500 font-mono">ID: {acc.account_id}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button onClick={() => toggleCurrency(acc)} className={`px-2.5 py-0.5 rounded-full border text-[8px] font-black transition-all ${acc.is_usc ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20' : 'bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20'}`}>{acc.is_usc ? 'USC' : 'USD'}</button>
                         <div className={`px-2 py-0.5 rounded-full border text-[8px] font-black ${offline ? 'text-red-500 border-red-500/20' : 'text-emerald-400 border-emerald-500/20'}`}>{offline ? 'OFFLINE' : 'LIVE'}</div>
                       </div>
@@ -347,10 +347,12 @@ export default function TradingPage() {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center text-[9px] font-bold text-slate-600 border-t border-slate-800/40 pt-4 uppercase">
-                      <span>LOTS: {acc.total_lots?.toFixed(2) || '0.00'}</span>
-                      <button onClick={() => setDeleteTarget(acc)} className="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[8px] font-black hover:bg-red-500/20 hover:border-red-500/40 transition-all">DELETE</button>
-                      <span className="font-mono opacity-60">{new Date(acc.updated_at).toLocaleTimeString('th-TH', { hour12: false })}</span>
+                    <div className="border-t border-slate-800/40 pt-3 space-y-2">
+                      <div className="flex justify-between items-center text-[9px] font-bold text-slate-600 uppercase">
+                        <span>LOTS: {acc.total_lots?.toFixed(2) || '0.00'}</span>
+                        <span className="font-mono opacity-60">{new Date(acc.updated_at).toLocaleTimeString('th-TH', { hour12: false })}</span>
+                      </div>
+                      <button onClick={() => setDeleteTarget(acc)} className="w-full py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[8px] font-black hover:bg-red-500/20 hover:border-red-500/40 transition-all">DELETE</button>
                     </div>
                   </div>
                 )
