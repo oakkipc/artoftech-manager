@@ -5,10 +5,16 @@ create table if not exists trading_accounts (
   account_name text not null,
   equity numeric not null default 0,
   balance numeric not null default 0,
+  profit numeric default 0,
   is_usc boolean not null default false,
   is_demo boolean not null default false,
   total_lots numeric default 0,
-  updated_at timestamptz not null default now()
+  buy_count integer default 0,
+  sell_count integer default 0,
+  buy_profit numeric default 0,
+  sell_profit numeric default 0,
+  updated_at timestamptz not null default now(),
+  constraint trading_accounts_account_id_key unique (account_id)
 );
 
 -- Enable realtime
