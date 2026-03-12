@@ -330,20 +330,21 @@ export default function TradingPage() {
                       <div className="mt-2 text-[11px] font-mono font-bold text-slate-400 uppercase">BAL: {acc.balance.toLocaleString()} {unit}</div>
                     </div>
 
-                    {/* Daily P&L */}
-                    <div className={`p-3 rounded-xl border text-center mb-3 ${daily ? (daily.pct >= 0 ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20') : 'bg-slate-950/40 border-slate-800/50'}`}>
-                      <p className="text-[8px] text-slate-500 font-black mb-1 uppercase tracking-widest">{"Today's P&L"}</p>
-                      {daily ? (
-                        <div className={`font-mono font-bold ${daily.pct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                          <span className="text-lg">{daily.pct >= 0 ? '+' : ''}{daily.pct.toFixed(2)}%</span>
-                          <span className="text-[10px] ml-2 opacity-70">{daily.diff >= 0 ? '+' : ''}{daily.diff.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                        </div>
-                      ) : <span className="text-slate-600 text-[10px]">No snapshot yet</span>}
-                    </div>
-
-                    <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/50 text-center mb-4">
-                      <p className="text-[8px] text-slate-500 font-black mb-1 uppercase tracking-widest">Drawdown</p>
-                      <p className={`text-xl font-bold font-mono ${dd < 0 ? 'text-red-500' : 'text-emerald-400'}`}>{dd.toFixed(2)}%</p>
+                    {/* Daily P&L + Drawdown */}
+                    <div className="flex gap-2 mb-4">
+                      <div className={`flex-1 p-3 rounded-xl border text-center ${daily ? (daily.pct >= 0 ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20') : 'bg-slate-950/40 border-slate-800/50'}`}>
+                        <p className="text-[8px] text-slate-500 font-black mb-1 uppercase tracking-widest">{"Today's P&L"}</p>
+                        {daily ? (
+                          <div className={`font-mono font-bold ${daily.pct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            <span className="text-base">{daily.pct >= 0 ? '+' : ''}{daily.pct.toFixed(2)}%</span>
+                            <div className="text-[9px] opacity-70">{daily.diff >= 0 ? '+' : ''}{daily.diff.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                          </div>
+                        ) : <span className="text-slate-600 text-[10px]">No snapshot</span>}
+                      </div>
+                      <div className="flex-1 bg-slate-950/60 p-3 rounded-xl border border-slate-800/50 text-center">
+                        <p className="text-[8px] text-slate-500 font-black mb-1 uppercase tracking-widest">Drawdown</p>
+                        <p className={`text-base font-bold font-mono ${dd < 0 ? 'text-red-500' : 'text-emerald-400'}`}>{dd.toFixed(2)}%</p>
+                      </div>
                     </div>
 
                     <div className="flex justify-between items-center text-[9px] font-bold text-slate-600 border-t border-slate-800/40 pt-4 uppercase">

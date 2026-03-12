@@ -171,7 +171,7 @@ export function Sidebar() {
                                 <span className="text-lg font-bold text-white tracking-tight block leading-tight">AOT Manager</span>
                                 <div className="flex items-center gap-2">
                                     <span className="text-[10px] font-semibold text-midnight-500 uppercase tracking-[0.2em]">Admin Panel</span>
-                                    <span className="text-[9px] font-bold text-violet-500/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md tracking-wider">v1.3.0</span>
+                                    <span className="text-[9px] font-bold text-violet-500/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md tracking-wider">v1.4.0</span>
                                 </div>
                             </div>
                         )}
