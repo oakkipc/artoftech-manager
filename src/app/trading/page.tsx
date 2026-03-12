@@ -249,15 +249,15 @@ export default function TradingPage() {
 
           {/* TABLE VIEW */}
           {viewMode === 'table' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-[1.5rem] overflow-x-auto shadow-2xl">
-              <table className="w-full text-left border-collapse" style={{ minWidth: 520 }}>
+            <div className="bg-slate-900 border border-slate-800 rounded-[1.5rem] overflow-hidden shadow-2xl">
+              <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-950 text-[9px] font-black text-slate-500 border-b border-slate-800">
                   <tr>
-                    <th onClick={() => requestSort('name')} className="p-4 w-[26%] cursor-pointer hover:text-white transition-colors">NAME {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                    <th onClick={() => requestSort('equity')} className="p-4 text-right w-[26%] cursor-pointer hover:text-white transition-colors">EQUITY/BAL {sortConfig.key === 'equity' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                    <th onClick={() => requestSort('daily')} className="p-4 text-center w-[20%] text-emerald-400 cursor-pointer hover:text-emerald-200 transition-colors">{"TODAY'S P&L"} {sortConfig.key === 'daily' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                    <th onClick={() => requestSort('dd')} className="p-4 text-center w-[14%] text-red-400 cursor-pointer hover:text-red-200 transition-colors">DD% {sortConfig.key === 'dd' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                    <th className="p-4 text-center w-[14%]"></th>
+                    <th onClick={() => requestSort('name')} className="p-4 cursor-pointer hover:text-white transition-colors">NAME {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => requestSort('equity')} className="p-4 text-right cursor-pointer hover:text-white transition-colors">EQUITY/BAL {sortConfig.key === 'equity' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => requestSort('daily')} className="hidden sm:table-cell p-4 text-center text-emerald-400 cursor-pointer hover:text-emerald-200 transition-colors">{"TODAY'S P&L"} {sortConfig.key === 'daily' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => requestSort('dd')} className="p-4 text-center text-red-400 cursor-pointer hover:text-red-200 transition-colors whitespace-nowrap">DD% {sortConfig.key === 'dd' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th className="hidden sm:table-cell p-4 text-center"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50 text-[11px] md:text-sm">
@@ -266,15 +266,15 @@ export default function TradingPage() {
                     const daily = getDailyPnL(acc)
                     return (
                       <tr key={acc.account_id} className={`hover:bg-slate-800/30 transition-colors ${acc.is_demo ? 'opacity-60' : ''}`}>
-                        <td className="p-4 overflow-hidden">
+                        <td className="p-4 max-w-[110px] overflow-hidden">
                           <p className="font-bold text-white truncate">{acc.account_name}</p>
                           <p className="text-[8px] text-slate-500 font-mono">ID: {acc.account_id}</p>
                         </td>
                         <td className="p-4 text-right font-mono font-bold">
-                          <div className="text-white">{acc.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-[8px] text-slate-500">{acc.is_usc ? 'USC' : 'USD'}</span></div>
+                          <div className="text-white whitespace-nowrap">{acc.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-[8px] text-slate-500">{acc.is_usc ? 'USC' : 'USD'}</span></div>
                           <div className="text-[9px] text-slate-500 opacity-60">{acc.balance.toLocaleString()}</div>
                         </td>
-                        <td className="p-4 text-center font-mono font-bold">
+                        <td className="hidden sm:table-cell p-4 text-center font-mono font-bold">
                           {daily ? (
                             <div className={daily.pct >= 0 ? 'text-emerald-400' : 'text-red-400'}>
                               <div>{daily.pct >= 0 ? '+' : ''}{daily.pct.toFixed(2)}%</div>
@@ -282,8 +282,8 @@ export default function TradingPage() {
                             </div>
                           ) : <span className="text-slate-600 text-[9px]">—</span>}
                         </td>
-                        <td className={`p-4 text-center font-mono font-bold ${dd < 0 ? 'text-red-500' : 'text-emerald-400'}`}>{dd.toFixed(1)}%</td>
-                        <td className="p-4 text-center">
+                        <td className={`p-4 text-center font-mono font-bold whitespace-nowrap ${dd < 0 ? 'text-red-500' : 'text-emerald-400'}`}>{dd.toFixed(1)}%</td>
+                        <td className="hidden sm:table-cell p-4 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button onClick={() => toggleCurrency(acc)} className={`px-2.5 py-1 rounded-lg border text-[9px] font-black transition-all ${acc.is_usc ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20' : 'bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20'}`}>{acc.is_usc ? 'USC' : 'USD'}</button>
                             <button onClick={() => setDeleteTarget(acc)} className="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black hover:bg-red-500/20 hover:border-red-500/40 transition-all">DEL</button>
