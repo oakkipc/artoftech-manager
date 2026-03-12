@@ -52,10 +52,21 @@ export default function TradingPage() {
     fetchPrices()
     const timer = setInterval(() => setNow(new Date()), 10000)
     const priceTimer = setInterval(fetchPrices, 30000)
+    // polling fallback — catches missed realtime events (browser background, ws drop)
+    const pollTimer = setInterval(fetchAccounts, 60000)
+    // refetch immediately when tab becomes visible again
+    const onVisibility = () => { if (document.visibilityState === 'visible') fetchAccounts() }
+    document.addEventListener('visibilitychange', onVisibility)
     const channel = supabase.channel('trading_aot_manager')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trading_accounts' }, () => fetchAccounts())
       .subscribe()
-    return () => { clearInterval(timer); clearInterval(priceTimer); supabase.removeChannel(channel) }
+    return () => {
+      clearInterval(timer)
+      clearInterval(priceTimer)
+      clearInterval(pollTimer)
+      document.removeEventListener('visibilitychange', onVisibility)
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const fetchPrices = async () => {
