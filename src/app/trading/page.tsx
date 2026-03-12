@@ -176,7 +176,7 @@ export default function TradingPage() {
       <Sidebar />
       <main className="flex-1 min-w-0 transition-all duration-300">
         {/* Header */}
-        <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-20 bg-midnight-950/80 backdrop-blur-xl border-b border-white/[0.04] pl-16 pr-4 lg:px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-white">Trading Dashboard</h1>
             <p className="text-xs text-slate-500">AOT Terminal — Live Portfolio Monitor</p>
@@ -249,15 +249,15 @@ export default function TradingPage() {
 
           {/* TABLE VIEW */}
           {viewMode === 'table' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-[1.5rem] overflow-hidden shadow-2xl">
-              <table className="w-full text-left border-collapse table-fixed">
+            <div className="bg-slate-900 border border-slate-800 rounded-[1.5rem] overflow-x-auto shadow-2xl">
+              <table className="w-full text-left border-collapse" style={{ minWidth: 520 }}>
                 <thead className="bg-slate-950 text-[9px] font-black text-slate-500 border-b border-slate-800">
                   <tr>
-                    <th onClick={() => requestSort('name')} className="p-4 w-[22%] cursor-pointer hover:text-white transition-colors">NAME {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => requestSort('name')} className="p-4 w-[26%] cursor-pointer hover:text-white transition-colors">NAME {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                     <th onClick={() => requestSort('equity')} className="p-4 text-right w-[26%] cursor-pointer hover:text-white transition-colors">EQUITY/BAL {sortConfig.key === 'equity' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                    <th onClick={() => requestSort('daily')} className="p-4 text-center w-[22%] text-emerald-400 cursor-pointer hover:text-emerald-200 transition-colors">{"TODAY'S P&L"} {sortConfig.key === 'daily' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                    <th onClick={() => requestSort('dd')} className="p-4 text-center w-[15%] text-red-400 cursor-pointer hover:text-red-200 transition-colors">DD% {sortConfig.key === 'dd' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                    <th className="p-4 text-center w-[15%]"></th>
+                    <th onClick={() => requestSort('daily')} className="p-4 text-center w-[20%] text-emerald-400 cursor-pointer hover:text-emerald-200 transition-colors">{"TODAY'S P&L"} {sortConfig.key === 'daily' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => requestSort('dd')} className="p-4 text-center w-[14%] text-red-400 cursor-pointer hover:text-red-200 transition-colors">DD% {sortConfig.key === 'dd' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th className="p-4 text-center w-[14%]"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50 text-[11px] md:text-sm">
