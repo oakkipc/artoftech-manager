@@ -23,7 +23,8 @@ import {
     Activity,
     ChevronUp,
     ChevronDown,
-    Settings2
+    Settings2,
+    TrendingUp
 } from 'lucide-react'
 
 const navItems = [
@@ -32,6 +33,7 @@ const navItems = [
         items: [
             { name: 'Projects Dashboard', href: '/dashboard', icon: LayoutDashboard },
             { name: 'Stakeholders Dashboard', href: '/admin/dashboard/stakeholders', icon: Activity },
+            { name: 'Trading Dashboard', href: '/trading', icon: TrendingUp },
         ]
     },
     {

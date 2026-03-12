@@ -23,7 +23,7 @@ const securityHeaders = [
   },
   {
     key: 'Content-Security-Policy',
-    value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; img-src 'self' blob: data: *.supabase.co; font-src 'self' fonts.gstatic.com; connect-src 'self' *.supabase.co;",
+    value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; img-src 'self' blob: data: *.supabase.co; font-src 'self' fonts.gstatic.com; connect-src 'self' *.supabase.co api.binance.com api.frankfurter.app;",
   },
 ]
 
