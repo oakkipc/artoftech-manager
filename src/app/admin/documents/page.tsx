@@ -20,7 +20,7 @@ interface Document {
     id: string; doc_number: string; doc_type: DocType; status: DocStatus
     client_id: string | null; project_id: string | null
     issue_date: string; due_date: string | null
-    subtotal: number; discount: number; vat_rate: number; vat_amount: number; total: number; paid_amount: number
+    subtotal: number; discount: number; vat_rate: number; vat_amount: number; wht_rate: number; wht_amount: number; total: number; paid_amount: number
     notes: string | null; ref_doc_id: string | null; created_at: string
     clients: { id: string; name: string } | null
     projects: { id: string; name: string } | null
@@ -88,7 +88,7 @@ export default function DocumentsPage() {
         doc_type: 'QUOTATION' as DocType,
         client_id: '', project_id: '',
         issue_date: new Date().toISOString().split('T')[0],
-        due_date: '', discount: '0', vat_rate: '7', notes: ''
+        due_date: '', discount: '0', vat_rate: '7', wht_rate: '0', notes: ''
     })
     const [items, setItems] = useState<LineItem[]>([{ ...EMPTY_ITEM }])
 
@@ -96,7 +96,9 @@ export default function DocumentsPage() {
     const subtotal = useMemo(() => items.reduce((s, i) => s + (parseFloat(i.unit_price) || 0) * (parseFloat(i.quantity) || 1), 0), [items])
     const discAmt = parseFloat(form.discount) || 0
     const vatAmt = ((subtotal - discAmt) * (parseFloat(form.vat_rate) || 0)) / 100
+    const whtAmt = ((subtotal - discAmt) * (parseFloat(form.wht_rate) || 0)) / 100
     const total = subtotal - discAmt + vatAmt
+    const netPayable = total - whtAmt
 
     useEffect(() => {
         const userStr = localStorage.getItem('user')
@@ -196,7 +198,7 @@ export default function DocumentsPage() {
     }
 
     const resetForm = () => {
-        setForm({ doc_type: 'QUOTATION', client_id: '', project_id: '', issue_date: new Date().toISOString().split('T')[0], due_date: '', discount: '0', vat_rate: '7', notes: '' })
+        setForm({ doc_type: 'QUOTATION', client_id: '', project_id: '', issue_date: new Date().toISOString().split('T')[0], due_date: '', discount: '0', vat_rate: '7', wht_rate: '0', notes: '' })
         setItems([{ ...EMPTY_ITEM }])
     }
 
@@ -441,8 +443,8 @@ export default function DocumentsPage() {
                                 </div>
                             </div>
 
-                            {/* Discount + VAT */}
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Discount + VAT + WHT */}
+                            <div className="grid grid-cols-3 gap-3">
                                 <div>
                                     <label className={labelCls}>ส่วนลด (บาท)</label>
                                     <input type="number" min="0" step="any" value={form.discount} onChange={e => setForm({ ...form, discount: e.target.value })} className={inputCls} />
@@ -451,12 +453,21 @@ export default function DocumentsPage() {
                                     <label className={labelCls}>VAT (%)</label>
                                     <input type="number" min="0" max="100" step="any" value={form.vat_rate} onChange={e => setForm({ ...form, vat_rate: e.target.value })} className={inputCls} />
                                 </div>
+                                <div>
+                                    <label className={labelCls}>หัก ณ ที่จ่าย (%)</label>
+                                    <select value={form.wht_rate} onChange={e => setForm({ ...form, wht_rate: e.target.value })} className={inputCls}>
+                                        <option value="0">ไม่หัก</option>
+                                        <option value="1">1%</option>
+                                        <option value="3">3%</option>
+                                        <option value="5">5%</option>
+                                    </select>
+                                </div>
                             </div>
 
                             {/* Notes */}
                             <div>
                                 <label className={labelCls}>หมายเหตุ</label>
-                                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className={inputCls + ' resize-none'} />
+                                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="เงื่อนไขการชำระเงิน, รายละเอียดเพิ่มเติม..." className={inputCls + ' resize-none'} />
                             </div>
 
                             {/* Summary */}
@@ -464,7 +475,13 @@ export default function DocumentsPage() {
                                 <div className="flex justify-between text-sm text-midnight-400"><span>ยอดก่อน VAT</span><span className="font-mono text-white">{subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>
                                 {discAmt > 0 && <div className="flex justify-between text-sm text-midnight-400"><span>ส่วนลด</span><span className="font-mono text-red-400">-{discAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>}
                                 <div className="flex justify-between text-sm text-midnight-400"><span>VAT {form.vat_rate}%</span><span className="font-mono text-white">{vatAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>
-                                <div className="flex justify-between text-base font-bold text-white border-t border-white/[0.06] pt-2"><span>ยอดรวมทั้งสิ้น</span><span className="font-mono text-violet-400">{total.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span></div>
+                                <div className="flex justify-between text-base font-bold text-white border-t border-white/[0.06] pt-2"><span>ยอดรวมทั้งสิ้น</span><span className="font-mono text-white">{total.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span></div>
+                                {whtAmt > 0 && (
+                                    <>
+                                        <div className="flex justify-between text-sm text-midnight-400"><span>หัก ณ ที่จ่าย {form.wht_rate}%</span><span className="font-mono text-red-400">-{whtAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>
+                                        <div className="flex justify-between text-base font-bold border-t border-violet-500/20 pt-2"><span className="text-violet-300">ยอดที่ต้องชำระ</span><span className="font-mono text-violet-400">{netPayable.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span></div>
+                                    </>
+                                )}
                             </div>
 
                             <button type="submit" disabled={submitting} className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all disabled:opacity-50 text-sm">

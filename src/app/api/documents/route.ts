@@ -54,7 +54,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { doc_type, client_id, project_id, issue_date, due_date, discount, vat_rate, notes, items, ref_doc_id, userId } = body
+        const { doc_type, client_id, project_id, issue_date, due_date, discount, vat_rate, wht_rate, notes, items, ref_doc_id, userId } = body
 
         if (!doc_type) return NextResponse.json({ error: 'doc_type is required' }, { status: 400 })
 
@@ -69,7 +69,9 @@ export async function POST(request: Request) {
         const subtotal = lineItems.reduce((s: number, i: any) => s + (parseFloat(i.unit_price) || 0) * (parseFloat(i.quantity) || 1), 0)
         const disc = parseFloat(discount) || 0
         const vatRatePct = parseFloat(vat_rate) ?? 7
+        const whtRatePct = parseFloat(wht_rate) || 0
         const vat_amount = ((subtotal - disc) * vatRatePct) / 100
+        const wht_amount = ((subtotal - disc) * whtRatePct) / 100
         const total = subtotal - disc + vat_amount
 
         const { data: doc, error: docError } = await supabase
@@ -85,6 +87,8 @@ export async function POST(request: Request) {
                 discount: disc,
                 vat_rate: vatRatePct,
                 vat_amount,
+                wht_rate: whtRatePct,
+                wht_amount,
                 total,
                 notes: notes || null,
                 ref_doc_id: ref_doc_id || null,

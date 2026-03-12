@@ -17,7 +17,7 @@ interface DocumentDetail {
     id: string; doc_number: string; doc_type: DocType; status: DocStatus
     client_id: string | null; project_id: string | null
     issue_date: string; due_date: string | null
-    subtotal: number; discount: number; vat_rate: number; vat_amount: number; total: number; paid_amount: number
+    subtotal: number; discount: number; vat_rate: number; vat_amount: number; wht_rate: number; wht_amount: number; total: number; paid_amount: number
     notes: string | null; ref_doc_id: string | null; created_at: string
     clients: { id: string; name: string; address: string | null; company_tax_id: string | null; contact_person: string | null; email: string | null; phone: string | null } | null
     projects: { id: string; name: string } | null
@@ -152,7 +152,8 @@ export default function DocumentDetailPage() {
     if (loading) return <div className="min-h-screen bg-midnight-950 flex items-center justify-center"><Loader2 className="w-8 h-8 text-violet-500 animate-spin" /></div>
     if (!doc) return <div className="min-h-screen bg-midnight-950 flex items-center justify-center text-midnight-500">ไม่พบเอกสาร</div>
 
-    const remaining = doc.total - doc.paid_amount
+    const netPayable = doc.total - (doc.wht_amount || 0)
+    const remaining = netPayable - doc.paid_amount
     const nextStatuses = NEXT_STATUSES[doc.status]
     const inputCls = "w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/40"
     const labelCls = "block text-[10px] font-bold text-midnight-500 uppercase tracking-wider mb-1.5 ml-1"
@@ -300,6 +301,18 @@ export default function DocumentDetailPage() {
                                         <span>ยอดรวมทั้งสิ้น</span>
                                         <span className="font-mono">{doc.total.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span>
                                     </div>
+                                    {(doc.wht_amount || 0) > 0 && (
+                                        <>
+                                            <div className="flex justify-between text-sm text-red-600">
+                                                <span>หัก ณ ที่จ่าย {doc.wht_rate}%</span>
+                                                <span className="font-mono">-{(doc.wht_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                            <div className="flex justify-between text-base font-black text-violet-700 border-t border-violet-200 pt-2">
+                                                <span>ยอดที่ต้องชำระ</span>
+                                                <span className="font-mono">{netPayable.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span>
+                                            </div>
+                                        </>
+                                    )}
                                     {doc.paid_amount > 0 && (
                                         <>
                                             <div className="flex justify-between text-sm text-emerald-600">
