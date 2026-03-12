@@ -24,7 +24,9 @@ import {
     ChevronUp,
     ChevronDown,
     Settings2,
-    TrendingUp
+    TrendingUp,
+    FileText,
+    Banknote
 } from 'lucide-react'
 
 const navItems = [
@@ -45,6 +47,8 @@ const navItems = [
             { name: 'Budget', href: '/budget', icon: Wallet },
             { name: 'Vendors', href: '/admin/vendors', icon: Users },
             { name: 'Clients', href: '/admin/clients', icon: Building2 },
+            { name: 'Documents', href: '/admin/documents', icon: FileText },
+            { name: 'Payments', href: '/admin/payments', icon: Banknote },
             { name: 'Activity Logs', href: '/admin/logs', icon: Activity },
         ]
     },
@@ -171,7 +175,7 @@ export function Sidebar() {
                                 <span className="text-lg font-bold text-white tracking-tight block leading-tight">AOT Manager</span>
                                 <div className="flex items-center gap-2">
                                     <span className="text-[10px] font-semibold text-midnight-500 uppercase tracking-[0.2em]">Admin Panel</span>
-                                    <span className="text-[9px] font-bold text-violet-500/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md tracking-wider">v1.4.0</span>
+                                    <span className="text-[9px] font-bold text-violet-500/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md tracking-wider">v1.5.0</span>
                                 </div>
                             </div>
                         )}
