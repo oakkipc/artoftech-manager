@@ -35,7 +35,7 @@ export default function TradingPage() {
   const [thbRate, setThbRate] = useState<number | null>(null)
   const [now, setNow] = useState(new Date())
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
-  const [cols, setCols] = useState<number>(3)
+  const [cols, setCols] = useState<number>(2)
   const [sortConfig, setSortConfig] = useState<{ key: 'equity' | 'dd' | 'name' | 'daily'; direction: 'asc' | 'desc' }>({
     key: 'equity',
     direction: 'desc'
